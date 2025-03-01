@@ -38,7 +38,7 @@ export async function middleware(req: NextRequest) {
         if (pathname !== "/login") {
           return NextResponse.redirect(new URL("/login", origin));
         }
-      } else if (pathname === "/login") {
+      } else if (pathname === "/login" || pathname === "/") {
         return NextResponse.redirect(new URL("/attendance", origin));
       }
     }
@@ -61,6 +61,5 @@ export const config = {
     "/calender/:path",
     "/attendance/:path*",
     "/login",
-    "/",
   ],
 };
