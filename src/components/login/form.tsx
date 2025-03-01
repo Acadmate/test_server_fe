@@ -2,14 +2,15 @@
 import { useRouter } from "next/navigation";
 import "@/app/globals.css";
 import "@/components/loaderButton.css";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import axios from "axios";
+import dotenv from "dotenv";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
-import { UseAuthStore } from "@/store/authStore";
 
 import {
   Form,
@@ -25,6 +26,8 @@ const formSchema = z.object({
 });
 
 export default function LoginForm() {
+  dotenv.config();
+  const api_url = process.env.NEXT_PUBLIC_API_URL;
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -34,22 +37,39 @@ export default function LoginForm() {
     },
   });
 
+  const [loading, setLoading] = useState(false);
   const [visible, setVisible] = useState(false);
-  const { isLoading, isAuthenticated, error, signin } = UseAuthStore();
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/attendance");
-    }
-  }, [isAuthenticated, router]);
+  const [error, setError] = useState("");
 
   const onSubmit: SubmitHandler<z.infer<typeof formSchema>> = async (
     values
   ) => {
+    setLoading(true);
+    setError("");
+
+    const payload = {
+      username: values.username,
+      password: values.password,
+    };
+
     try {
-      await signin(values.username, values.password);
+      const response = await axios.post(`${api_url}/login`, payload, {
+        withCredentials: true,
+      });
+
+      if (response.status === 200) {
+        localStorage.setItem("stats", "true");
+        localStorage.setItem("kill", JSON.stringify({}));
+        localStorage.setItem("user", values.username);
+        router.push("/attendance");
+      } else {
+        setError("Login failed. Please check your credentials.");
+      }
     } catch (err) {
-      console.error("Error:", err);
+      setError("Login failed. Please check your connection or credentials.");
+      console.log("Error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,7 +89,7 @@ export default function LoginForm() {
                   id="username"
                   aria-label="Username"
                   className={`rounded h-[55px] md:h-[60px] ${
-                    error != null ? "border-red-500" : "border-gray-400"
+                    error ? "border-red-500" : "border-gray-400"
                   } block w-full px-4 pb-2.5 pt-5 text-lg font-semibold bg-zinc-200/70 dark:bg-black border dark:focus:border-none focus:border-white focus:ring-0 focus:outline-none peer`}
                   placeholder=" "
                   type="text"
@@ -97,7 +117,7 @@ export default function LoginForm() {
                   id="password"
                   aria-label="Password"
                   className={`rounded h-[55px] md:h-[60px] ${
-                    error != null ? "border-red-500" : "border-gray-400"
+                    error ? "border-red-500" : "border-gray-400"
                   } block w-full px-4 pb-2.5 pt-5 text-lg font-semibold bg-zinc-200/70 dark:bg-black border dark:focus:border-none focus:border-white focus:ring-0 focus:outline-none peer`}
                   placeholder=" "
                   type={visible ? "text" : "password"}
@@ -128,15 +148,13 @@ export default function LoginForm() {
           )}
         />
 
-        {error && (
-          <p className="text-red-500 text-sm">{JSON.stringify(error)}</p>
-        )}
+        {error && <p className="text-red-500 text-sm">{error}</p>}
         <Button
           type="submit"
           className="self-center mt-4 bg-[#9cc95e] text-white text-lg px-7 py-3 rounded-lg w-full hover:shadow-lg transition-all duration-200 font-bold hover:bg-[#BFFD70] active:scale-95 active:bg-[#86af4d] disabled:opacity-70"
-          disabled={isLoading}
+          disabled={loading}
         >
-          {isLoading ? <div className="loader"></div> : "Log In"}
+          {loading ? <div className="loader"></div> : "Log In"}
         </Button>
       </form>
     </Form>
