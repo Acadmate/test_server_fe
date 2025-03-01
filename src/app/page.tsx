@@ -1,16 +1,16 @@
 "use client";
 import Link from "next/link";
-// import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  // const [hasStats, setHasStats] = useState<boolean>(false);
+  const [, setHasStats] = useState<boolean>(false);
 
-  // useEffect(() => {
-  //   if (typeof window !== "undefined") {
-  //     const stats = localStorage.getItem("stats");
-  //     setHasStats(stats === "true");
-  //   }
-  // }, []);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stats = localStorage.getItem("stats");
+      setHasStats(stats === "true");
+    }
+  }, []);
 
   return (
     <div className="flex flex-col h-screen w-screen justify-center items-center">
