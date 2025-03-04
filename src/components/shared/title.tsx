@@ -1,3 +1,4 @@
+"use client";
 import Toggle from "./switchTheme";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -19,6 +20,8 @@ export default function Title() {
       return "Gpa Calc";
     } else if (pathname == "/messmenu") {
       return "Mess Menu";
+    } else if (pathname == "/logs") {
+      return "Logs";
     } else {
       return "Imp Links";
     }

@@ -9,6 +9,7 @@ import { IoPerson, IoCalculator } from "react-icons/io5";
 import { GrScorecard, GrCafeteria } from "react-icons/gr";
 import { MdOutlineSchedule } from "react-icons/md";
 import { usePathname } from "next/navigation";
+// import { MdOutlineChecklist } from "react-icons/md";
 import useScrollMrks from "@/store/mrksScroll";
 
 export default function Menu() {
@@ -116,6 +117,12 @@ export default function Menu() {
       icon: <GrCafeteria />,
       label: "SupaDocs",
     },
+    // {
+    //   id: "logs",
+    //   href: "/logs",
+    //   icon: <MdOutlineChecklist />,
+    //   label: "Logs",
+    // },
   ];
 
   const handleMenuClick = (item: {

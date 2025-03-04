@@ -34,7 +34,7 @@ export default function Main({ data }: MainProps) {
           {data.map((item, index) => (
             <div
               key={index}
-              className={`flex flex-col rounded-2xl bg-gray-100 ${
+              className={`flex flex-col rounded-2xl ${
                 index % 2 == 0 ? "dark:bg-[#171B26]" : "dark:bg-black"
               } items-center px-3 py-2 gap-2`}
             >
