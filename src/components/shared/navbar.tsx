@@ -23,7 +23,7 @@ export default function Navbar() {
             </Link>
           </div>
           <Link
-            href="/login"
+            href="/"
             onClick={clear}
             className="flex flex-row text-sm md:text-base font-bold bg-red-400 text-black rounded px-2 py-1 rounded h-fit w-fit items-center justify-center"
           >
