@@ -90,7 +90,7 @@ export default function DashboardMenu() {
             href={item.href}
             key={item.id}
             onClick={() => setSection(item.id)}
-            className="flex flex-row items-center border border-gray-300 dark:border-gray-700 h-14 dark:text-white dark:bg-[#171B26] py-2 px-4 rounded hover:text-green-400 dark:hover:text-green-400 transition-all duration-400"
+            className="flex flex-row items-center bg-gray-100 border border-gray-300 dark:border-gray-700 h-14 dark:text-white dark:bg-[#171B26] py-2 px-4 rounded hover:text-green-400 dark:hover:text-green-400 transition-all duration-400"
           >
             <span className="text-xl">{item.icon}</span>
             <span className="ml-2">{item.label}</span>

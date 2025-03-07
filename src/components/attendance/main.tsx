@@ -35,7 +35,9 @@ export default function Main({ data }: MainProps) {
             <div
               key={index}
               className={`flex flex-col rounded-2xl ${
-                index % 2 == 0 ? "dark:bg-[#171B26]" : "dark:bg-black"
+                index % 2 == 0
+                  ? "bg-gray-100 dark:bg-[#171B26]"
+                  : "dark:bg-black"
               } items-center px-3 py-2 gap-2`}
             >
               <div className="flex flex-col md:flex-row w-full">

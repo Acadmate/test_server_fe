@@ -18,7 +18,7 @@ export default function AttMarksSwitch() {
           }}
           className={`flex flex-row text-xl items-center justify-center rounded-lg w-10 h-10 ${
             select == "dashboard"
-              ? "bg-[#1B3C1E] text-green-500"
+              ? "dark:bg-[#1B3C1E] bg-green-200 text-green-500 border border-green-500"
               : "text-black dark:text-gray-400"
           }`}
         >
@@ -32,7 +32,7 @@ export default function AttMarksSwitch() {
           }}
           className={`flex flex-row text-xl items-center justify-center rounded-lg w-10 h-10 ${
             select == "attendance"
-              ? "bg-[#1B3C1E] text-green-500"
+              ? "dark:bg-[#1B3C1E] bg-green-200 text-green-500 border border-green-500"
               : "text-black dark:text-gray-400"
           }`}
         >
@@ -46,7 +46,7 @@ export default function AttMarksSwitch() {
           }}
           className={`flex flex-row text-base items-center justify-center rounded-lg w-10 h-10 ${
             select == "marks"
-              ? "bg-[#1B3C1E] text-green-500"
+              ? "dark:bg-[#1B3C1E] bg-green-200 text-green-500 border border-green-500"
               : "text-black dark:text-gray-400"
           }`}
         >

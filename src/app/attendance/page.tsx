@@ -62,7 +62,8 @@ export default function Attendance() {
         : "att-section";
     if (
       (section === "marks" && dataMarks.length > 0) ||
-      (section === "attendance" && predictedAtt.length > 0)
+      (section === "attendance" && predictedAtt.length > 0) ||
+      section == "dashboard"
     ) {
       scroller.scrollTo(sectionId, {
         duration: 500,
