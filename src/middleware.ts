@@ -9,7 +9,7 @@ export function middleware(request: NextRequest) {
   const protectedRoutes = [
     "/attendance",
     "/timetable",
-    "/calendar",
+    "/calender",
     "/supadocs",
     "/gpacalc",
     "/logs",
@@ -36,7 +36,7 @@ export const config = {
     "/login",
     "/attendance",
     "/timetable",
-    "/calendar",
+    "/calender",
     "/supadocs",
     "/gpacalc",
     "/logs",
