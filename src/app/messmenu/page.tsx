@@ -6,7 +6,6 @@ import FoodCard from "@/components/messmenu/FoodCard";
 import { useEffect, useState } from "react";
 import { GrFormNextLink, GrFormPreviousLink } from "react-icons/gr";
 import Title from "@/components/shared/title";
-import { useRouter } from "next/navigation";
 
 type MealType = "BREAKFAST" | "LUNCH" | "SNACKS" | "DINNER";
 type DayMeals = { [key in MealType]: string[] };
@@ -16,24 +15,11 @@ type WeeklyMenu = { messName: string; weekMenu: DailyMenu[] };
 const mealOrder: MealType[] = ["BREAKFAST", "LUNCH", "SNACKS", "DINNER"];
 
 export default function Messmenu() {
-  const router = useRouter();
   const [mess, setMess] = useState<WeeklyMenu | null>(null);
   const [currentDayIndex, setCurrentDayIndex] = useState<number>(
     new Date().getDay()
   );
   const [currentMealIndex, setCurrentMealIndex] = useState<number>(0);
-
-  useEffect(() => {
-    const redirectToLogin = () => {
-      localStorage.clear();
-      router.replace("/login");
-    };
-
-    if (!localStorage.getItem("stats")) {
-      redirectToLogin();
-      return;
-    }
-  }, []);
 
   useEffect(() => {
     const getDefaultMess = (): WeeklyMenu => {

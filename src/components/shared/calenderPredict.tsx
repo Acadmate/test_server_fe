@@ -407,31 +407,48 @@ export default function CalendarPredict() {
         interactive={true}
         placement={"bottom"}
         arrow={false}
+        zIndex={1}
         theme="translucent"
         trigger="click"
+        popperOptions={{
+          modifiers: [
+            {
+              name: "flip",
+              enabled: false,
+            },
+            {
+              name: "preventOverflow",
+              options: {
+                mainAxis: false,
+              },
+            },
+          ],
+        }}
         content={
-          <div className="flex flex-col gap-2">
-            <Calendar
-              disabled={{
-                before: new Date(),
-                after: new Date(lastDate),
-              }}
-              mode="range"
-              selected={dateRange}
-              onSelect={handleSelect}
-              className={`rounded-xl border shadow transition bg-white dark:bg-black text-black dark:text-white`}
-            />
-            <div
-              onClick={() =>
-                predict(
-                  dateRange
-                    ? { from: dateRange.from, to: dateRange.to || undefined }
-                    : undefined
-                )
-              }
-              className="flex flex-row w-fit items-center justify-center px-2 py-1 rounded bg-green-200 dark:bg-green-400 text-black"
-            >
-              Predict
+          <div className="flex flex-row w-full items-center justify-center">
+            <div className="flex flex-col gap-2">
+              <Calendar
+                disabled={{
+                  before: new Date(),
+                  after: new Date(lastDate),
+                }}
+                mode="range"
+                selected={dateRange}
+                onSelect={handleSelect}
+                className={`rounded-xl border shadow transition bg-white dark:bg-black text-black dark:text-white`}
+              />
+              <div
+                onClick={() =>
+                  predict(
+                    dateRange
+                      ? { from: dateRange.from, to: dateRange.to || undefined }
+                      : undefined
+                  )
+                }
+                className="self-end flex flex-row items-center w-fit px-2 py-1 rounded bg-green-200 dark:bg-green-400 text-black"
+              >
+                Apply
+              </div>
             </div>
           </div>
         }

@@ -16,9 +16,6 @@ export default async function Main() {
   try {
     const cookieHeader = new Headers().get("cookie") || "";
 
-    // Simulate a delay to test Suspense (optional)
-    // await new Promise((resolve) => setTimeout(resolve, 2000));
-
     const response = await fetch(`${api_url}/logs`, {
       headers: {
         "Content-Type": "application/json",

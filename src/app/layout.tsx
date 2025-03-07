@@ -4,7 +4,6 @@ import "./globals.css";
 import { Providers } from "./providers";
 import Navbar from "@/components/shared/navbar";
 import dynamic from "next/dynamic";
-import MenuMobileTrigger from "@/components/shared/menuMobileTrigger";
 
 export const metadata: Metadata = {
   title: "Acadmate",
@@ -26,7 +25,6 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${roboto.className} antialiased`}>
         <div>
-          <MenuMobileTrigger />
           <Menu />
           <Navbar />
           <Providers>{children}</Providers>

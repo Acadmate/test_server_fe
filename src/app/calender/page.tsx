@@ -3,12 +3,9 @@ import MainCal from "@/components/calendar/main";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { fetchCalender } from "@/actions/calendarFetch";
-import dynamic from "next/dynamic";
 import Title from "@/components/shared/title";
 import { TbRefresh } from "react-icons/tb";
-const Loader = dynamic(() => import("@/components/shared/spinner"), {
-  ssr: false,
-});
+import Loader from "@/components/shared/spinner";
 
 export default function Calender() {
   const router = useRouter();
@@ -20,11 +17,6 @@ export default function Calender() {
     const cache = JSON.parse(localStorage.getItem("kill") || "{}");
     cache[key] = getCurrentTimestamp();
     localStorage.setItem("kill", JSON.stringify(cache));
-  };
-
-  const redirectToLogin = () => {
-    localStorage.clear();
-    router.replace("/login");
   };
 
   const refresh = async () => {
@@ -66,18 +58,14 @@ export default function Calender() {
   };
 
   useEffect(() => {
-    if (!localStorage.getItem("stats")) {
-      redirectToLogin();
-    } else {
-      calenderData();
-    }
+    calenderData();
   }, [router]);
 
   if (loading) {
     return (
-      <div className="mx-auto mt-16 flex flex-col items-center justify-center w-[200px] h-[200px]">
+      <>
         <Loader />
-      </div>
+      </>
     );
   }
 

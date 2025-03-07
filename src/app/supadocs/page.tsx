@@ -1,5 +1,4 @@
 "use client";
-
 import dynamic from "next/dynamic";
 
 const Animation = dynamic(() => import("@/components/shared/animation"), {

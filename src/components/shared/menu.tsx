@@ -6,9 +6,11 @@ import Link from "next/link";
 import { RxCalendar } from "react-icons/rx";
 import { IoPerson, IoCalculator } from "react-icons/io5";
 // import { IoIosLink } from "react-icons/io";
-import { GrScorecard, GrCafeteria } from "react-icons/gr";
+import { GrCafeteria } from "react-icons/gr";
 import { MdOutlineSchedule } from "react-icons/md";
 import { usePathname } from "next/navigation";
+import { BiSolidZap } from "react-icons/bi";
+import { FaFolder } from "react-icons/fa";
 // import { MdOutlineChecklist } from "react-icons/md";
 import useScrollMrks from "@/store/mrksScroll";
 
@@ -81,14 +83,13 @@ export default function Menu() {
       icon: <RxCalendar />,
       label: "Calendar",
     },
-    { id: "marks", href: "/attendance", icon: <GrScorecard />, label: "Marks" },
     {
-      id: "attendance",
+      id: "dashboard",
       href: "/attendance",
       icon: <IoPerson />,
       label: (
         <>
-          <span className="text-nowrap">Att %</span>
+          <span className="text-nowrap">Dashboard</span>
         </>
       ),
     },
@@ -114,7 +115,18 @@ export default function Menu() {
     {
       id: "supadocs",
       href: "/supadocs",
-      icon: <GrCafeteria />,
+      icon: (
+        <div className="flex flex-row z-10 items-center">
+          <span className="relative flex flex-row items-center inline-block">
+            <span className="text-xl">
+              <FaFolder />
+            </span>
+            <span className="absolute text-white top-[8px] transform translate-x-1/4 -translate-y-1/4 text-[12px] rotate-210">
+              <BiSolidZap />
+            </span>
+          </span>
+        </div>
+      ),
       label: "SupaDocs",
     },
     // {
@@ -155,7 +167,7 @@ export default function Menu() {
                   <Link
                     key={index}
                     className={`absolute flex flex-col ${
-                      section === item.id
+                      path == item.href
                         ? "bg-[#C1FF72]/80 rounded text-black"
                         : ""
                     } items-center justify-center w-fit h-fit text-xs font-bold p-1 rounded`}

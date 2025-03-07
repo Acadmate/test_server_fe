@@ -1,5 +1,4 @@
 "use client";
-import Toggle from "./switchTheme";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import CalendarPredict from "./calenderPredict";
@@ -37,7 +36,6 @@ export default function Title() {
         <h1 className="text-2xl font-bold">{path}</h1>
         {pathname == "/attendance" ? <CalendarPredict /> : ""}
       </div>
-      <Toggle />
     </div>
   );
 }

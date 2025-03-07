@@ -5,7 +5,6 @@ import { fetchAttendance } from "@/actions/attendanceFetch";
 import { fetchDetails } from "@/actions/details";
 import MarkCards from "@/components/marks/MarkCards";
 import Main from "@/components/attendance/main";
-import dynamic from "next/dynamic";
 import usePredictedAtt from "@/store/tempAtt";
 import usetimetable from "@/store/timetable";
 import { fetchOrder } from "@/actions/orderFetch";
@@ -15,9 +14,8 @@ import { TbRefresh } from "react-icons/tb";
 import { fetchCalender } from "@/actions/calendarFetch";
 import AttMarkSwitch from "@/components/attendance/AttMarksSwitch";
 import usePredictedButton from "@/store/predictButtonState";
-const Loader = dynamic(() => import("@/components/shared/spinner"), {
-  ssr: false,
-});
+import DashboardMenu from "@/components/shared/dashBoardMenu";
+import Loader from "@/components/shared/spinner";
 
 type MarksRecord = {
   "Course Code": string;
@@ -50,28 +48,24 @@ export default function Attendance() {
   }, [router]);
 
   useEffect(() => {
-    const redirectToLogin = () => {
-      localStorage.clear();
-      router.replace("/login");
-    };
-
-    if (!localStorage.getItem("stats")) {
-      redirectToLogin();
-      return;
-    }
     if (!localStorage.getItem("kill")) {
       localStorage.setItem("kill", JSON.stringify({}));
     }
   }, []);
 
   useEffect(() => {
-    const sectionId = section === "marks" ? "marks-section" : "att-section";
+    const sectionId =
+      section === "marks"
+        ? "marks-section"
+        : section == "dashboard"
+        ? "dashboard"
+        : "att-section";
     if (
       (section === "marks" && dataMarks.length > 0) ||
       (section === "attendance" && predictedAtt.length > 0)
     ) {
       scroller.scrollTo(sectionId, {
-        duration: 800,
+        duration: 500,
         delay: 0,
         smooth: "easeInOutQuart",
       });
@@ -91,7 +85,6 @@ export default function Attendance() {
     } catch (error) {
       console.error("Error fetching attendance:", error);
       setError(true);
-      localStorage.removeItem("stats");
       router.push("/login");
     } finally {
       setLoading(false);
@@ -231,9 +224,9 @@ export default function Attendance() {
 
   if (loading) {
     return (
-      <div className="mx-auto mt-16 flex flex-col items-center justify-center w-[200px] h-[200px]">
+      <>
         <Loader />
-      </div>
+      </>
     );
   }
 
@@ -249,7 +242,7 @@ export default function Attendance() {
   return (
     <div className="flex flex-col gap-2 w-screen lg:w-[73vw] mx-auto">
       <AttMarkSwitch />
-      <div className="sticky z-49 top-0 left-0 w-full bg-black/70 backdrop-blur-[3px] text-white p-3 shadow-md sm:p-4">
+      <div className="sticky z-40 top-0 left-0 w-full bg-black/70 backdrop-blur-[3px] text-white p-3 shadow-md sm:p-4">
         <div className="flex items-center justify-between">
           <span className="flex flex-col text-xs sm:text-base">
             Data outdated? Click to refresh.
@@ -270,6 +263,9 @@ export default function Attendance() {
           </button>
         </div>
       </div>
+      <Element name="dashboard">
+        <DashboardMenu />
+      </Element>
       <Element name="att-section">
         <Main data={predictedAtt} />
       </Element>

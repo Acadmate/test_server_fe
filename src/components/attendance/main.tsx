@@ -116,7 +116,7 @@ export default function Main({ data }: MainProps) {
                       className={`text-[26px] md:text-3xl font-extrabold text-nowrap ${
                         parseInt(item["Attn %"]) >= 90
                           ? "text-green-400"
-                          : parseInt(item["Attn %"]) > 75
+                          : parseInt(item["Attn %"]) >= 75
                           ? "text-orange-300"
                           : "text-red-400"
                       }`}

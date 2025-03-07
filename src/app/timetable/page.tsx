@@ -1,17 +1,13 @@
 "use client";
 import Timetable from "@/components/timetable/main";
 import { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { fetchDetails } from "@/actions/details";
 import usetimetable from "@/store/details";
 import { TbRefresh } from "react-icons/tb";
 import { fetchOrder } from "@/actions/orderFetch";
 import { fetchAttendance } from "@/actions/attendanceFetch";
-
-const Loader = dynamic(() => import("@/components/shared/spinner"), {
-  ssr: false,
-});
+import Loader from "@/components/shared/spinner";
 
 export default function TimetablePage() {
   const router = useRouter();
@@ -25,12 +21,6 @@ export default function TimetablePage() {
     cache[key] = getCurrentTimestamp();
     localStorage.setItem("kill", JSON.stringify(cache));
   };
-
-  const redirectToLogin = () => {
-    localStorage.clear();
-    router.replace("/login");
-  };
-
   const refreshTimetable = async () => {
     setLoading(true);
     try {
@@ -110,11 +100,7 @@ export default function TimetablePage() {
   };
 
   useEffect(() => {
-    if (!localStorage.getItem("stats")) {
-      redirectToLogin();
-    } else {
-      initializeData();
-    }
+    initializeData();
   }, [router]);
 
   useEffect(() => {
@@ -140,7 +126,7 @@ export default function TimetablePage() {
 
   return (
     <div className="flex flex-col justify-center items-center mx-auto h-fit w-screen lg:w-[73vw]">
-      <div className="z-49 top-0 left-0 w-full bg-black/70 backdrop-blur-[3px] text-white p-3 shadow-md sm:p-4">
+      <div className="z-40 top-0 left-0 w-full bg-black/70 backdrop-blur-[3px] text-white p-3 shadow-md sm:p-4">
         <div className="flex items-center justify-between">
           <span className="flex flex-col text-xs sm:text-base">
             Data outdated? Click to refresh.

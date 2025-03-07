@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import GpaCalc from "@/components/Calculator/Calculator";
 import CgpaCalc from "@/components/Calculator/CgpaCalc";
