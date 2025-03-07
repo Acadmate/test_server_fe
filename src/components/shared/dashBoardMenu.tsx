@@ -86,6 +86,7 @@ export default function DashboardMenu() {
       <div className="grid grid-cols-2 md:grid-rows-2 md:grid-cols-3 gap-2 w-full p-2">
         {menuItems.map((item) => (
           <Link
+            prefetch={true}
             href={item.href}
             key={item.id}
             onClick={() => setSection(item.id)}

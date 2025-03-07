@@ -165,6 +165,7 @@ export default function Menu() {
               <div className="relative w-fit h-full mx-auto">
                 {menuItems.map((item, index) => (
                   <Link
+                    prefetch={true}
                     key={index}
                     className={`absolute flex flex-col ${
                       path == item.href
