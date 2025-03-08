@@ -25,7 +25,8 @@ export default function Navbar() {
     }
   };
 
-  if (pathname === "/login" || pathname === "/") return null;
+  if (pathname === "/login" || pathname === "/" || pathname === "/maintenance")
+    return null;
 
   return (
     <div className="flex flex-row items-center justify-between mx-auto h-[60px] md:h-[80px] w-screen lg:w-[73vw] border-b-2 dark:border-gray-500/20 p-2">

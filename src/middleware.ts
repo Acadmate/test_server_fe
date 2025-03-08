@@ -15,7 +15,11 @@ export function middleware(request: NextRequest) {
     "/logs",
     "/messmenu",
   ];
+  const maintenance = process.env.NEXT_PUBLIC_API_MAINTENANCE;
 
+  if (maintenance === "true") {
+    return NextResponse.redirect(new URL("/maintenance", request.url));
+  }
   if (publicRoutes.includes(pathname)) {
     if (authToken) {
       return NextResponse.redirect(new URL("/attendance", request.url));
