@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import useMonth from "@/store/calendarMonth";
 
 const monthMap = {
   1: "January",
@@ -31,12 +32,12 @@ type CalendarProps = {
 export default function MainCal({ data }: CalendarProps) {
   const currentDate = new Date();
   const [currentDay, setCurrentDay] = useState<number | null>(null);
-  const [currentMonth, setCurrentMonth] = useState<number | null>(null);
   const currentDayRef = useRef<HTMLDivElement | null>(null);
+  const { month, setMonth } = useMonth();
 
   useEffect(() => {
     setCurrentDay(currentDate.getDate());
-    setCurrentMonth(currentDate.getMonth() + 1);
+    setMonth(currentDate.getMonth() + 1);
   }, []);
 
   useEffect(() => {
@@ -48,7 +49,7 @@ export default function MainCal({ data }: CalendarProps) {
     }
   }, [currentDay]);
 
-  const monthName = currentMonth ? monthMap[currentMonth as MonthKey] : "";
+  const monthName = month ? monthMap[month as MonthKey] : "";
 
   const eventsForMonth = data[monthName] || [];
 
@@ -58,7 +59,7 @@ export default function MainCal({ data }: CalendarProps) {
         <div className="text-center text-lg">No calendar data available</div>
       ) : (
         <>
-          <h2 className="text-3xl font-bold mx-auto my-1 dark:bg-[#15241b] dark:text-[#C1FF72] px-5 py-1 rounded-full">
+          <h2 className="text-3xl font-bold mx-auto dark:bg-[#15241b] text-gray-600 dark:text-[#C1FF72] px-5 py-1 rounded-full">
             {monthName}
           </h2>
           {eventsForMonth.map((event, index) => (
@@ -66,7 +67,7 @@ export default function MainCal({ data }: CalendarProps) {
               key={index}
               ref={index + 1 === currentDay ? currentDayRef : null}
               className={`relative overflow-hidden flex flex-col justify-between p-5 lg:p-8  mx-2 my-3 rounded-2xl h-fit ${
-                index + 1 == currentDay
+                index + 1 === currentDay && month === currentDate.getMonth() + 1
                   ? "bg-green-300/40 dark:bg-[#15241b] text-black/60 dark:text-[#C1FF72] border-none dark:border-2 dark:border-dashed dark:border-[#C1FF72]"
                   : event.DayOrder == "-"
                   ? "bg-orange-300/40 dark:bg-[#2e2a14] text-black/60 dark:text-[#FFDD70]"
@@ -75,7 +76,10 @@ export default function MainCal({ data }: CalendarProps) {
             >
               <div
                 className={`absolute inset-0 ${
-                  index + 1 == currentDay ? "hidden" : "dark:bg-black/30"
+                  index + 1 == currentDay &&
+                  month === currentDate.getMonth() + 1
+                    ? "hidden"
+                    : "dark:bg-black/30"
                 } z-10`}
               ></div>
               <div className="flex flex-row justify-between items-center mx-1 lg:mb-2 text-lg lg:text-2xl">

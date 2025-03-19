@@ -6,6 +6,7 @@ import { fetchCalender } from "@/actions/calendarFetch";
 import Title from "@/components/shared/title";
 import { TbRefresh } from "react-icons/tb";
 import Loader from "@/components/shared/spinner";
+import MonthNavigate from "@/components/calendar/month_navigate";
 
 export default function Calender() {
   const router = useRouter();
@@ -79,6 +80,7 @@ export default function Calender() {
 
   return (
     <div className="flex flex-col gap-2 w-fit mx-auto">
+      <MonthNavigate />
       <div className="sticky z-50 top-0 left-0 w-full bg-black/70 backdrop-blur-[3px] text-white p-3 shadow-md sm:p-4">
         <div className="flex items-center justify-between">
           <span className="flex flex-col text-xs sm:text-base">
