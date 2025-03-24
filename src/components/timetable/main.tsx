@@ -5,7 +5,8 @@ import { IoCaretForwardCircle, IoCaretBackCircleSharp } from "react-icons/io5";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Download from "./download";
-import domtoimage from "dom-to-image";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const Animation = dynamic(() => import("@/components/shared/noclass"), {
   ssr: false,
@@ -78,23 +79,69 @@ export default function Timetable() {
     }
   }, [order, router]);
 
-  const captureAsImage = () => {
+  const captureAsPDF = async () => {
     const element = captureRef.current;
-    if (element) {
-      domtoimage
-        .toJpeg(element, { quality: 1 })
-        .then((dataUrl) => {
-          const link = document.createElement("a");
-          link.href = dataUrl;
-          link.download = "TimeTable.jpg";
-          link.click();
-        })
-        .catch((error) => {
-          console.error("Error capturing image:", error);
-        });
+    if (!element) return;
+  
+    try {
+      // Ensure desktop layout is used even on mobile
+      const originalDisplay = element.style.display;
+      element.style.display = "flex"; // Ensure it's not hidden
+  
+      // Detect current theme
+      const isDarkMode = document.documentElement.classList.contains("dark");
+  
+      // Apply theme to ensure correct colors are captured
+      if (isDarkMode) {
+        element.classList.add("dark");
+      } else {
+        element.classList.remove("dark");
+      }
+  
+      // Capture the element as an image
+      const canvas = await html2canvas(element, {
+        scale: 2, // Increase resolution
+        useCORS: true,
+        backgroundColor: isDarkMode ? "#000" : "#fff",
+      });
+  
+      // Restore original display
+      element.style.display = originalDisplay;
+  
+      // Convert canvas to image
+      const imgData = canvas.toDataURL("image/png");
+  
+      // Match the width of the timetable in the PDF
+      const imgWidth = canvas.width / 3;
+      const imgHeight = canvas.height / 3;
+  
+      // Create a PDF with the same width as the captured table
+      const pdf = new jsPDF({
+        orientation: imgWidth > imgHeight ? "l" : "p",
+        unit: "px",
+        format: [imgWidth, imgHeight],
+      });
+  
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.save("TimeTable.pdf");
+  
+    } catch (error) {
+      console.error("Error capturing timetable as PDF:", error);
     }
   };
 
+  function downloadPDF() {
+    const originalWidth = document.body.style.width;
+    document.body.style.width = "1440px"; // Force desktop width
+  
+    // Ensure styles are applied before rendering PDF
+    setTimeout(() => {
+      captureAsPDF();
+      document.body.style.width = originalWidth; // Restore original width after download
+    }, 100); // Small delay to apply styles
+  }
+  
+  
   return (
     <>
       {check !== "off" ? (
@@ -103,7 +150,7 @@ export default function Timetable() {
             <div className="flex flex-row gap-4">
               <h1 className="text-2xl font-bold">Time Table</h1>
               <span className="hidden lg:block">
-                <Download func={captureAsImage} />
+                <Download func={captureAsPDF} />
               </span>
             </div>
             <Toggle />
@@ -118,7 +165,7 @@ export default function Timetable() {
                     {timeTable[order - 1].day}
                   </div>
                   <div>
-                    <Download func={captureAsImage} />
+                    <Download func={downloadPDF} />
                   </div>
                 </div>
                 {timeTable[order - 1].periods
