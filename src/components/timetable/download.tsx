@@ -1,8 +1,11 @@
+"use client";
+import { memo } from 'react';
+
 interface DownloadProps {
   func: () => void;
 }
 
-export default function Download({ func }: DownloadProps) {
+function Download({ func }: DownloadProps) {
   return (
     <div
       onClick={func}
@@ -12,3 +15,5 @@ export default function Download({ func }: DownloadProps) {
     </div>
   );
 }
+
+export default memo(Download);

@@ -28,6 +28,6 @@
     },
     "target": "ES2017"
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/components/Calculator/AddSubjectButton.js"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/components/Calculator/AddSubjectButton.js", "src/components/utils/cacheUtils.js", "src/components/utils/networkUtils.js", "src/components/utils/pdfUtils.js"],
   "exclude": ["node_modules"]
 }

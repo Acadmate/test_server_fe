@@ -5,11 +5,13 @@ import "tippy.js/dist/tippy.css";
 import "tippy.js/themes/translucent.css";
 import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import usePredictedAtt from "@/store/tempAtt";
 import { fetchAttendance } from "@/actions/attendanceFetch";
 import usePredictedButton from "@/store/predictButtonState";
 import { IoMdCloseCircle } from "react-icons/io";
+import { fetchCalender } from "@/actions/calendarFetch";
+import { fetchDetails } from "@/actions/details";
 
 interface Period {
   course?: {
@@ -41,6 +43,7 @@ export default function CalendarPredict() {
   const { setPredictedAtt, predictedAtt } = usePredictedAtt();
   const [lastDate, setLastDate] = useState("");
   const { predictedButton, setPredictedButton } = usePredictedButton();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const RevMonthMap: { [key: number]: string } = {
     1: "January",
@@ -81,37 +84,44 @@ export default function CalendarPredict() {
     console.log("Selected Range:", range);
   };
 
-  const reset = () => {
-    const att = JSON.parse(localStorage.getItem("att") || "");
-    setPredictedAtt(att.attendance);
-    setPredictedButton(0);
+  const reset = async () => {
+    setIsProcessing(true);
+    try {
+      const att = await fetchAttendance();
+      if (att && att.attendance) {
+        setPredictedAtt(att.attendance);
+        setPredictedButton(0);
+      }
+    } catch (error) {
+      console.error("Error resetting attendance data:", error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   function countFrequency(arr: string[]) {
     const frequencyMap: { [key: string]: number } = {};
     for (const num of arr) {
-      frequencyMap[num] = (frequencyMap[num] || 0) + 1;
+      if (num !== null) {
+        frequencyMap[num] = (frequencyMap[num] || 0) + 1;
+      }
     }
     return frequencyMap;
   }
 
-  const ClassesBetweenDates = (range: DateRange | undefined) => {
+  const ClassesBetweenDates = async (range: DateRange | undefined) => {
     const ClassesAttendedTillDayOff: { [key: string]: number } = {};
     const tempCourseRecord: CourseRecord = {};
     const temp: string[] = [];
     const FROM_CURRENT_DAY_TO_OFF_START: string[] = [];
 
-    const caldata = JSON.parse(localStorage.getItem("calendar") || "{}");
-    const timetableData = JSON.parse(localStorage.getItem("timetable") || "[]");
+    const caldata = await fetchCalender();
+    const timetableData = await fetchDetails();
 
     if (!range?.from || !range?.to) return ClassesAttendedTillDayOff;
     const formatDateToString = (date: Date): string => {
       return date.toISOString().split("T")[0];
     };
-
-    // const createDateFromString = (dateString: string): Date => {
-    //   return new Date(dateString + "T00:00:00.000Z");
-    // };
 
     const startDate = new Date(range.from);
     startDate.setDate(startDate.getDate() + 1);
@@ -159,7 +169,6 @@ export default function CalendarPredict() {
     }
 
     const AttendedDoFreq = countFrequency(FROM_CURRENT_DAY_TO_OFF_START);
-    // console.log("Valid Day Orders:", FROM_CURRENT_DAY_TO_OFF_START);
     console.log("Missed Day order frequency:", AttendedDoFreq);
 
     timetableData.forEach((day: Day, dayIndex: number) => {
@@ -202,13 +211,13 @@ export default function CalendarPredict() {
     return ClassesAttendedTillDayOff;
   };
 
-  const ClassesTillFirstDayOff = (range: DateRange | undefined) => {
+  const ClassesTillFirstDayOff = async (range: DateRange | undefined) => {
     const ClassesAttendedTillDayOff: { [key: string]: number } = {};
     const tempCourseRecord: CourseRecord = {};
     const temp: string[] = [];
     const FROM_CURRENT_DAY_TO_OFF_START: string[] = [];
-    const caldata = JSON.parse(localStorage.getItem("calendar") || "{}");
-    const timetableData = JSON.parse(localStorage.getItem("timetable") || "[]");
+    const caldata = await fetchCalender();
+    const timetableData = await fetchDetails();
     if (!range?.from) return FROM_CURRENT_DAY_TO_OFF_START;
     const offStart = new Date(range.from);
     const today = new Date();
@@ -237,20 +246,18 @@ export default function CalendarPredict() {
       const entry = monthEntries.find(
         (e: { Date: string }) => parseInt(e.Date, 10) === dayNumber
       );
-      if (entry?.DayOrder != "-") {
-        FROM_CURRENT_DAY_TO_OFF_START.push(entry?.DayOrder || null);
+      if (entry?.DayOrder && entry?.DayOrder !== "-") {
+        FROM_CURRENT_DAY_TO_OFF_START.push(entry.DayOrder);
       }
     }
-    // console.log(FROM_CURRENT_DAY_TO_OFF_START);
+
     const AttendedDoFreq =
-      FROM_CURRENT_DAY_TO_OFF_START.length != 0
+      FROM_CURRENT_DAY_TO_OFF_START.length !== 0
         ? countFrequency(FROM_CURRENT_DAY_TO_OFF_START)
         : {};
 
-    // console.log(`Till off day start${AttendedDoFreq}`);
-
     timetableData.forEach((day: Day, dayIndex: number) => {
-      const dayOrder = dayIndex + 1; // Convert to 1-based index
+      const dayOrder = dayIndex + 1;
 
       day.periods.forEach((period: Period) => {
         if (period.course) {
@@ -270,7 +277,6 @@ export default function CalendarPredict() {
         }
       });
     });
-    // console.log(tempCourseRecord);
 
     Object.entries(tempCourseRecord).forEach(([courseCode, dayEntries]) => {
       let total = 0;
@@ -291,119 +297,178 @@ export default function CalendarPredict() {
   };
 
   const predict = async (range: DateRange | undefined) => {
-    const caldata = JSON.parse(localStorage.getItem("calendar") || "{}");
-    const timetableData = JSON.parse(localStorage.getItem("timetable") || "[]");
-    const att = JSON.parse(localStorage.getItem("att") || "{}");
-    if (Object.keys(caldata).length === 0 && caldata.constructor === Object) {
-      setPredictedButton(-1);
-      return "Cal data not available";
-    }
-    if (timetableData.length == 0) {
-      setPredictedButton(-1);
-      return "timetable data not available";
-    }
-    if (Object.keys(att).length === 0 && att.constructor === Object) {
-      const attData = await fetchAttendance();
-      localStorage.setItem("att", attData);
-    }
-    const attended = ClassesTillFirstDayOff(range);
-    const missed = ClassesBetweenDates(range);
-    // console.log(attended);
-    // console.log(missed);
-    const updatedAttendance = JSON.parse(JSON.stringify(att.attendance));
-
-    Object.entries(attended).forEach(([courseCode, value]) => {
-      let baseCode: string;
-      let category: string;
-
-      if (courseCode.endsWith("-P")) {
-        baseCode = courseCode.slice(0, -2);
-        category = "Practical";
-      } else {
-        baseCode = courseCode;
-        category = "Theory";
-      }
-
-      updatedAttendance.forEach((entry: AttendanceEntry) => {
-        if (
-          entry["Course Code"].startsWith(baseCode) &&
-          entry.Category === category
-        ) {
-          const currentHours = parseInt(entry["Hours Conducted"]) || 0;
-          entry["Hours Conducted"] = (currentHours + value).toString();
-        }
-      });
-    });
-
-    Object.entries(missed).forEach(([courseCode, value]) => {
-      let baseCode: string;
-      let category: string;
-
-      if (courseCode.endsWith("-P")) {
-        baseCode = courseCode.slice(0, -2);
-        category = "Practical";
-      } else {
-        baseCode = courseCode;
-        category = "Theory";
-      }
-
-      updatedAttendance.forEach((entry: AttendanceEntry) => {
-        if (
-          entry["Course Code"].startsWith(baseCode) &&
-          entry.Category === category
-        ) {
-          const currentHours = parseInt(entry["Hours Conducted"]) || 0;
-          const currentAbsentHours = parseInt(entry["Hours Absent"]) || 0;
-          entry["Hours Conducted"] = (currentHours + value).toString();
-          entry["Hours Absent"] = (currentAbsentHours + value).toString();
-        }
-      });
-    });
-
-    updatedAttendance.map((item: AttendanceEntry) => {
-      item["Attn %"] = (
-        ((parseInt(item["Hours Conducted"]) - parseInt(item["Hours Absent"])) /
-          parseInt(item["Hours Conducted"])) *
-        100
-      ).toFixed(2);
-    });
-    att.attendance = updatedAttendance;
-    if (updatedAttendance.length != 0) {
-      setPredictedButton(1);
-    } else {
-      setPredictedButton(0);
-      console.log("Attendance Prediction failed");
+    if (!range?.from) {
+      alert("Please select a date range first");
       return;
     }
-    setPredictedAtt(att.attendance);
-    console.log(predictedAtt);
+    
+    setIsProcessing(true);
+    try {
+      const caldata = await fetchCalender();
+      const timetableData = await fetchDetails();
+      const att = await fetchAttendance();
+      
+      if (!att || !att.attendance || att.attendance.length === 0) {
+        console.error("No attendance data available");
+        setPredictedButton(-1);
+        return;
+      }
+
+      if (Object.keys(caldata).length === 0) {
+        console.error("Calendar data not available");
+        setPredictedButton(-1);
+        return "Calendar data not available";
+      }
+      
+      if (!timetableData || timetableData.length === 0) {
+        console.error("Timetable data not available");
+        setPredictedButton(-1);
+        return "Timetable data not available";
+      }
+
+      const attendedClasses = await ClassesTillFirstDayOff(range);
+      const missedClasses = await ClassesBetweenDates(range);
+      
+      console.log("Attended classes:", attendedClasses);
+      console.log("Missed classes:", missedClasses);
+
+      // Create a deep copy to ensure we're not mutating original data
+      const updatedAttendance = JSON.parse(JSON.stringify(att.attendance));
+
+      // Process attended classes (classes that will be attended)
+      Object.entries(attendedClasses).forEach(([courseCode, value]) => {
+        let baseCode: string;
+        let category: string;
+
+        if (courseCode.endsWith("-P")) {
+          baseCode = courseCode.slice(0, -2);
+          category = "Practical";
+        } else {
+          baseCode = courseCode;
+          category = "Theory";
+        }
+
+        updatedAttendance.forEach((entry: AttendanceEntry) => {
+          if (
+            entry["Course Code"].startsWith(baseCode) &&
+            entry.Category === category
+          ) {
+            const currentHours = parseInt(entry["Hours Conducted"]) || 0;
+            entry["Hours Conducted"] = (currentHours + value).toString();
+          }
+        });
+      });
+
+      // Process missed classes (absent during the selected period)
+      Object.entries(missedClasses).forEach(([courseCode, value]) => {
+        let baseCode: string;
+        let category: string;
+
+        if (courseCode.endsWith("-P")) {
+          baseCode = courseCode.slice(0, -2);
+          category = "Practical";
+        } else {
+          baseCode = courseCode;
+          category = "Theory";
+        }
+
+        updatedAttendance.forEach((entry: AttendanceEntry) => {
+          if (
+            entry["Course Code"].startsWith(baseCode) &&
+            entry.Category === category
+          ) {
+            const currentHours = parseInt(entry["Hours Conducted"]) || 0;
+            const currentAbsentHours = parseInt(entry["Hours Absent"]) || 0;
+            entry["Hours Conducted"] = (currentHours + value).toString();
+            entry["Hours Absent"] = (currentAbsentHours + value).toString();
+          }
+        });
+      });
+
+      // Fix: properly calculate attendance percentages
+      updatedAttendance.forEach((item: AttendanceEntry) => {
+        const conducted = parseInt(item["Hours Conducted"]) || 0;
+        const absent = parseInt(item["Hours Absent"]) || 0;
+        
+        // Avoid division by zero
+        if (conducted > 0) {
+          const attended = conducted - absent;
+          const percentage = (attended / conducted) * 100;
+          item["Attn %"] = percentage.toFixed(2);
+        } else {
+          item["Attn %"] = "0.00";
+        }
+      });
+
+      // Update the state with the new attendance data
+      console.log("Setting updated attendance:", updatedAttendance);
+      setPredictedAtt(updatedAttendance);
+      setPredictedButton(1);
+      
+    } catch (error) {
+      console.error("Error predicting attendance:", error);
+      setPredictedButton(-1);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const findLastDate = () => {
-    const caldata = JSON.parse(localStorage.getItem("calendar") || "{}");
-    const timetableData = JSON.parse(localStorage.getItem("timetable") || "[]");
-    if (Object.keys(caldata).length == 0 || timetableData.length == 0) {
+  const findLastDate = async () => {
+    setIsProcessing(true);
+    try {
+      const caldata = await fetchCalender();
+      const timetableData = await fetchDetails();
+      console.log(caldata, timetableData)
+      if (Object.keys(caldata).length === 0 || !timetableData || timetableData.length === 0) {
+        setPredictedButton(-1);
+        setIsProcessing(false);
+        return "Calendar data or timetable data is not available";
+      }
+      
+      const d = new Date();
+      const currentMonth = d.getMonth() + 1;
+      const currentYear = d.getFullYear();
+      const lastMonthKey = Object.keys(caldata).pop();
+      if (!lastMonthKey) {
+        setPredictedButton(-1);
+        setIsProcessing(false);
+        return "No calendar months available";
+      }
+      
+      const month = monthMap[lastMonthKey as keyof typeof monthMap];
+      const lastMonthEntries = caldata[lastMonthKey];
+      
+      if (!lastMonthEntries || lastMonthEntries.length === 0) {
+        setPredictedButton(-1);
+        setIsProcessing(false);
+        return "No entries in last calendar month";
+      }
+      
+      const day = parseInt(lastMonthEntries[lastMonthEntries.length - 1]?.Date);
+      
+      // Calculate year based on month comparison
+      const year = currentMonth < month ? currentYear - 1 : currentYear;
+      const lastDateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      
+      setLastDate(lastDateStr);
+      setIsProcessing(false);
+    } catch (error) {
+      console.error("Error finding last date:", error);
       setPredictedButton(-1);
-      return "Calendar data or timetable data is not available";
+      setIsProcessing(false);
     }
-    const d = new Date();
-    const currentMonth = d.getMonth() + 1;
-    const currentYear = d.getFullYear();
-    const month = monthMap[Object.keys(caldata).pop() as keyof typeof monthMap];
-    const day = parseInt(
-      caldata[Object.keys(caldata).pop() as keyof typeof monthMap].pop()?.Date
-    );
-
-    if (currentMonth < month) {
-      setLastDate(`${currentYear + 1}-${month}-${day}`);
-    }
-    setLastDate(`${currentYear}-${month}-${day}`);
   };
 
   return (
-    <div className="flex flex-row items-center gap-4">
+    <div className="flex flex-row items-center gap-4 relative">
+      {isProcessing && (
+        <div className="absolute inset-0 bg-black/30 flex items-center justify-center rounded-md">
+          <div className="animate-spin h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full"></div>
+        </div>
+      )}
+      
       <Tippy
-        disabled={predictedButton == -1 || predictedButton == 1 ? true : false}
+        disabled={predictedButton === -1 || predictedButton === 1 }
         interactive={true}
         placement={"bottom"}
         arrow={false}
@@ -430,7 +495,7 @@ export default function CalendarPredict() {
               <Calendar
                 disabled={{
                   before: new Date(),
-                  after: new Date(lastDate),
+                  after: lastDate ? new Date(lastDate) : undefined,
                 }}
                 mode="range"
                 selected={dateRange}
@@ -438,14 +503,14 @@ export default function CalendarPredict() {
                 className={`rounded-xl border shadow transition bg-white dark:bg-black text-black dark:text-white`}
               />
               <div
-                onClick={() =>
-                  predict(
-                    dateRange
-                      ? { from: dateRange.from, to: dateRange.to || undefined }
-                      : undefined
-                  )
-                }
-                className="self-end flex flex-row items-center w-fit px-2 py-1 rounded bg-green-200 dark:bg-green-400 text-black"
+                onClick={() => {
+                  if (dateRange?.from) {
+                    predict(dateRange);
+                  } else {
+                    alert("Please select a date range");
+                  }
+                }}
+                className="self-end flex flex-row items-center w-fit px-2 py-1 rounded bg-green-200 dark:bg-green-400 text-black cursor-pointer hover:bg-green-300 transition-colors"
               >
                 Apply
               </div>
@@ -455,17 +520,17 @@ export default function CalendarPredict() {
       >
         <div
           onClick={
-            predictedButton == 0
+            predictedButton === 0
               ? () => findLastDate()
-              : predictedButton == 1
+              : predictedButton === 1
               ? () => reset()
               : undefined
           }
           className={`${
-            predictedButton == -1 ? "cursor-not-allowed" : "cursor-pointer"
+            predictedButton === -1 || isProcessing ? "cursor-not-allowed opacity-70" : "cursor-pointer"
           }`}
         >
-          {predictedButton == 1 ? (
+          {predictedButton === 1 ? (
             <div className="flex flex-row text-sm items-center text-black justify-center rounded gap-2 px-1 py-[3px] transition-all duration-100 active:scale-95 font-bold bg-red-400">
               Close
               <span className="text-base">
@@ -473,32 +538,12 @@ export default function CalendarPredict() {
               </span>
             </div>
           ) : (
-            <span className="flex flex-row  text-sm items-center justify-center font-bold transition-all duration-100 active:scale-95 bg-green-400 px-1 py-[3px] w-fit h-fit text-black rounded">
+            <span className="flex flex-row text-sm items-center justify-center font-bold transition-all duration-100 active:scale-95 bg-green-400 px-1 py-[3px] w-fit h-fit text-black rounded">
               {"Predict"}
             </span>
           )}
         </div>
       </Tippy>
-
-      {/* <div className="text-sm font-medium text-gray-700">
-        {dateRange?.from && dateRange.to ? (
-          <p>
-            <span className="font-bold">
-              {new Date(dateRange.from).toISOString().slice(0, 10)} -{" "}
-              {new Date(dateRange.to).toISOString().slice(0, 10)}
-            </span>
-          </p>
-        ) : dateRange?.from ? (
-          <p>
-            Selected Date:{" "}
-            <span className="font-bold">
-              {new Date(dateRange.from).toISOString().slice(0, 10)}
-            </span>
-          </p>
-        ) : (
-          <p>No range selected</p>
-        )}
-      </div> */}
     </div>
   );
 }

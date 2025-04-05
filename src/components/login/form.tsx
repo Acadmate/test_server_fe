@@ -61,7 +61,7 @@ export default function LoginForm() {
         localStorage.setItem("stats", "true");
         localStorage.setItem("kill", JSON.stringify({}));
         localStorage.setItem("user", values.username);
-        router.push("/attendance");
+        router.replace("/attendance");
       } else {
         setError("Login failed. Please check your credentials.");
       }

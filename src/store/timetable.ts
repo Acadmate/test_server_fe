@@ -20,4 +20,31 @@ const usetimetable = create<TimeTableData>((set) => ({
   timetable: [],
 }));
 
+/**
+ * Represents a course in the timetable
+ */
+export interface Course {
+  CourseCode: string;
+  CourseTitle: string;
+  FacultyName: string;
+  RoomNo: string;
+}
+
+/**
+ * Represents a single period within a day
+ */
+export interface PeriodProp {
+  period: string;
+  timeSlot: string;
+  course: Course | null;
+}
+
+/**
+ * Represents a full day in the timetable
+ */
+export interface TimetableEntry {
+  day: string;
+  periods: PeriodProp[];
+}
+
 export default usetimetable;

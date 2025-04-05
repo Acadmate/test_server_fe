@@ -1,21 +1,29 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, Suspense, lazy } from "react";
 import { useRouter } from "next/navigation";
-import { fetchAttendance } from "@/actions/attendanceFetch";
-import { fetchDetails } from "@/actions/details";
-import MarkCards from "@/components/marks/MarkCards";
-import Main from "@/components/attendance/main";
-import usePredictedAtt from "@/store/tempAtt";
-import usetimetable from "@/store/timetable";
+import { fetchAttendance, getAttendanceCacheStats, clearAttendanceCache } from "@/actions/attendanceFetch";
 import { fetchOrder } from "@/actions/orderFetch";
-import useScrollMrks from "@/store/mrksScroll";
 import { scroller, Element } from "react-scroll";
 import { TbRefresh } from "react-icons/tb";
-import { fetchCalender } from "@/actions/calendarFetch";
-import AttMarkSwitch from "@/components/attendance/AttMarksSwitch";
+import usePredictedAtt from "@/store/tempAtt";
+import useScrollMrks from "@/store/mrksScroll";
 import usePredictedButton from "@/store/predictButtonState";
 import DashboardMenu from "@/components/shared/dashBoardMenu";
-import Loader from "@/components/shared/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Lazy load components that are not immediately needed
+const Main = lazy(() => import("@/components/attendance/main"));
+const MarkCards = lazy(() => import("@/components/marks/MarkCards"));
+const AttMarkSwitch = lazy(() => import("@/components/attendance/AttMarksSwitch"));
+
+const LoadingFallback = () => (
+  <div className="w-full flex flex-col items-center justify-center p-2">
+    {[...Array(4)].map((_, i) => (
+      <Skeleton key={i} className="h-[125px] w-full rounded-xl mt-2" />
+    ))}
+  </div>
+);
 
 type MarksRecord = {
   "Course Code": string;
@@ -24,64 +32,113 @@ type MarksRecord = {
 };
 
 export default function Attendance() {
-  const { setPredictedButton } = usePredictedButton();
   const router = useRouter();
   const [dataMarks, setDataMarks] = useState<MarksRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const { setPredictedAtt, predictedAtt } = usePredictedAtt();
-  const { setTimeTable } = usetimetable();
   const { section } = useScrollMrks();
+  const { setPredictedButton } = usePredictedButton();
+  const [cacheStats, setCacheStats] = useState<any>(null);
+  const [courseTitles, setCourseTitles] = useState<Record<string, string>>({});
 
-  function getCurrentTimestamp() {
-    return new Date().getTime();
-  }
-
-  function updateKill(key: string) {
-    const kill = JSON.parse(localStorage.getItem("kill") || "{}");
-    kill[key] = getCurrentTimestamp();
-    localStorage.setItem("kill", JSON.stringify(kill));
-  }
+  useEffect(() => {
+    const titles = predictedAtt.reduce((acc: Record<string, string>, record) => {
+      const code = (record["Course Code"] as string).replace("Regular", "");
+      acc[code] = record["Course Title"];
+      return acc;
+    }, {});
+    setCourseTitles(titles);
+  }, [predictedAtt]);
 
   useEffect(() => {
     setPredictedButton(0);
-  }, [router]);
+  }, [setPredictedButton]);
 
   useEffect(() => {
-    if (!localStorage.getItem("kill")) {
-      localStorage.setItem("kill", JSON.stringify({}));
-    }
-  }, []);
-
-  useEffect(() => {
-    const sectionId =
-      section === "marks"
-        ? "marks-section"
-        : section == "dashboard"
-        ? "dashboard"
-        : "att-section";
-    if (
+    const isDataLoaded =
       (section === "marks" && dataMarks.length > 0) ||
       (section === "attendance" && predictedAtt.length > 0) ||
-      section == "dashboard"
-    ) {
-      scroller.scrollTo(sectionId, {
-        duration: 500,
-        delay: 0,
-        smooth: "easeInOutQuart",
-      });
-    }
-  }, [dataMarks, section]);
+      section === "dashboard";
+
+    if (loading || !isDataLoaded) return;
+
+    const sectionId =
+      section === "marks" ? "marks-section" : section === "dashboard" ? "dashboard" : "att-section";
+
+    const timer = setTimeout(() => {
+      scroller.scrollTo(sectionId, { duration: 500, delay: 0, smooth: "easeInOutQuart" });
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [loading, predictedAtt, dataMarks, section]);
+
+  const updateCacheStats = () => {
+    const stats = getAttendanceCacheStats();
+    setCacheStats(stats);
+    return stats;
+  };
+
+  // Fetch attendance and order data
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Check cache stats first
+        const stats = updateCacheStats();
+
+        const attendanceData = await fetchAttendance({
+          forceRefresh: !stats.exists || stats.isExpired,
+          updateCache: true
+        });
+
+        if (attendanceData) {
+          setPredictedAtt(attendanceData.attendance || []);
+          setDataMarks(attendanceData.marks || []);
+          updateCacheStats();
+        }
+
+        const orderData = JSON.parse(localStorage.getItem("order") || "{}");
+        const nowUTC = new Date();
+        const currentUTCDate = nowUTC.toUTCString().split(" ")[0];
+
+        // Check if order data needs to be refreshed (different day)
+        const lastOrderFetch = localStorage.getItem("order-last-fetch");
+        const lastFetchDate = lastOrderFetch ? new Date(parseInt(lastOrderFetch)).toUTCString().split(" ")[0] : null;
+
+        if (!orderData || lastFetchDate !== currentUTCDate) {
+          const order = await fetchOrder();
+          if (order) {
+            localStorage.setItem("order", JSON.stringify(order.dayOrder));
+            localStorage.setItem("order-last-fetch", Date.now().toString());
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        if ((error as any)?.response?.status === 401) {
+          router.replace("/login");
+        }
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [router, setPredictedAtt]);
 
   const refresh = async () => {
     setLoading(true);
     try {
-      const attendanceData = await fetchAttendance();
+      // Force a fresh fetch and update the cache
+      const attendanceData = await fetchAttendance({
+        forceRefresh: true,
+        updateCache: true
+      });
+
       if (attendanceData) {
-        localStorage.setItem("att", JSON.stringify(attendanceData));
         setPredictedAtt(attendanceData.attendance || []);
         setDataMarks(attendanceData.marks || []);
-        updateKill("att");
+        updateCacheStats();
       }
     } catch (error) {
       console.error("Error fetching attendance:", error);
@@ -92,187 +149,100 @@ export default function Attendance() {
     }
   };
 
-  const fetchAttendanceData = async () => {
-    setLoading(true);
-    try {
-      const attData = JSON.parse(localStorage.getItem("att") || "{}");
-      const cacheTimeAtt = JSON.parse(localStorage.getItem("kill") || "{}").att;
-      const currentTimestamp = getCurrentTimestamp();
-      if (
-        !attData ||
-        Object.keys(attData).length === 0 ||
-        !cacheTimeAtt ||
-        currentTimestamp - cacheTimeAtt > 2 * 60 * 60 * 1000
-      ) {
-        const attendanceData = await fetchAttendance();
-        if (attendanceData) {
-          localStorage.setItem("att", JSON.stringify(attendanceData));
-          setPredictedAtt(attendanceData.attendance || []);
-          setDataMarks(attendanceData.marks || []);
-          updateKill("att");
-        }
-      } else {
-        setPredictedAtt(attData.attendance || []);
-        setDataMarks(attData.marks || []);
-      }
-    } catch (error) {
-      console.error("Error fetching attendance:", error);
-      router.replace("/login");
-      setError(true);
-      localStorage.removeItem("att");
-    } finally {
-      setLoading(false);
+  const blurPulseStyle = loading
+    ? {
+      animation: "blurPulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1)",
+      filter: "blur(0.5px)",
+      opacity: 0.8,
+      willChange: "filter, opacity",
     }
-  };
+    : {};
 
-  const calenderData = async () => {
-    const calData = JSON.parse(localStorage.getItem("calendar") || "{}");
-    const cacheTimeCal = JSON.parse(
-      localStorage.getItem("kill") || "{}"
-    ).calendar;
-    const currentTimestamp = getCurrentTimestamp();
-    try {
-      if (
-        !calData ||
-        Object.keys(calData).length === 0 ||
-        !cacheTimeCal ||
-        currentTimestamp - cacheTimeCal > 23 * 60 * 60 * 1000
-      ) {
-        const response = await fetchCalender();
-        if (response) {
-          updateKill("calendar");
-          localStorage.setItem("calendar", JSON.stringify(response));
-        }
-      }
-    } catch {
-      console.error("Error fetching calendar", error);
-      setError(true);
-      localStorage.removeItem("calendar");
+  // Detect slow network connection
+  const [isSlowConnection, setIsSlowConnection] = useState(false);
+  useEffect(() => {
+    if ("connection" in navigator && (navigator as any).connection) {
+      const connection = (navigator as any).connection;
+      const updateConnectionStatus = () => {
+        setIsSlowConnection(connection.effectiveType === "slow-2g" || connection.effectiveType === "2g");
+      };
+      updateConnectionStatus();
+      connection.addEventListener("change", updateConnectionStatus);
+      return () => connection.removeEventListener("change", updateConnectionStatus);
     }
-  };
-
-  const fetchTimetable = async () => {
-    const timetable = localStorage.getItem("timetable")
-      ? JSON.parse(localStorage.getItem("timetable") || "[]")
-      : [];
-    const cacheTimeTT = JSON.parse(
-      localStorage.getItem("kill") || "{}"
-    ).timetable;
-    const currentTimestamp = getCurrentTimestamp();
-
-    try {
-      if (
-        timetable.length == 0 ||
-        !Array.isArray(timetable) ||
-        !cacheTimeTT ||
-        currentTimestamp - cacheTimeTT > 6 * 60 * 60 * 1000 ||
-        !timetable
-      ) {
-        const timetableData = await fetchDetails();
-        localStorage.setItem("timetable", JSON.stringify(timetableData));
-        setTimeTable(timetableData);
-      }
-    } catch (error) {
-      console.error("Error fetching timetable:", error);
-      setError(true);
-      localStorage.removeItem("timetable");
-    }
-  };
-
-  const fetchDo = async () => {
-    try {
-      const orderData = JSON.parse(localStorage.getItem("order") || "{}");
-      const cacheTimeOrder = JSON.parse(
-        localStorage.getItem("kill") || "{}"
-      ).order;
-
-      const nowUTC = new Date();
-      const currentUTCDate = nowUTC.toUTCString().split(" ")[0];
-
-      const lastFetchDate = cacheTimeOrder
-        ? new Date(cacheTimeOrder).toUTCString().split(" ")[0]
-        : null;
-
-      if (!orderData || lastFetchDate !== currentUTCDate) {
-        const order = await fetchOrder();
-        if (order) {
-          updateKill("order");
-          localStorage.setItem("order", JSON.stringify(order.dayOrder));
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching order:", error);
-      setError(true);
-      localStorage.removeItem("order");
-    }
-  };
-
-  useEffect(() => {
-    fetchAttendanceData();
   }, []);
-
-  useEffect(() => {
-    calenderData();
-  }, []);
-
-  useEffect(() => {
-    fetchTimetable();
-  }, []);
-
-  useEffect(() => {
-    fetchDo();
-  }, []);
-
-  if (loading) {
-    return (
-      <>
-        <Loader />
-      </>
-    );
-  }
-
-  const courseTitles = predictedAtt.reduce(
-    (acc: Record<string, string>, record) => {
-      acc[(record["Course Code"] as string).replace("Regular", "")] =
-        record["Course Title"];
-      return acc;
-    },
-    {}
-  );
 
   return (
     <div className="flex flex-col gap-2 w-screen lg:w-[73vw] mx-auto">
-      <AttMarkSwitch />
+      {/* Global styles for blurPulse animation */}
+      <style jsx global>{`
+        @keyframes blurPulse {
+          0% {
+            filter: blur(0.5px);
+            opacity: 0.5;
+          }
+          50% {
+            filter: blur(2px);
+            opacity: 0.7;
+          }
+          100% {
+            filter: blur(0.5px);
+            opacity: 0.5;
+          }
+        }
+      `}</style>
+
       <div className="sticky z-40 top-0 left-0 w-full bg-black/70 backdrop-blur-[3px] text-white p-3 shadow-md sm:p-4">
         <div className="flex items-center justify-between">
           <span className="flex flex-col text-xs sm:text-base">
             Data outdated? Click to refresh.
             <span className="text-green-400 font-bold">
               Last fetched:{" "}
-              {JSON.parse(localStorage.getItem("kill") || "{}").att
-                ? new Date(
-                    JSON.parse(localStorage.getItem("kill") || "{}").att
-                  ).toLocaleString()
-                : "-"}
+              {cacheStats?.exists ? cacheStats.timestamp : "-"}
+              {cacheStats?.exists && cacheStats.expiresIn > 0 && (
+                <span className="ml-1 text-xs">
+                  (expires in {cacheStats.expiresIn} min)
+                </span>
+              )}
             </span>
           </span>
           <button
-            onClick={refresh}
+            onClick={async () => await refresh()}
+            disabled={loading}
             className="bg-green-400 text-black font-extrabold p-1 rounded-md text-xl sm:py-2 sm:px-4 sm:text-base active:scale-95 transition-all duration-300"
           >
-            <TbRefresh />
+            <TbRefresh className={loading ? "animate-spin" : ""} />
           </button>
         </div>
       </div>
+
+      {isSlowConnection && (
+        <div className="bg-yellow-100 text-yellow-800 p-2 text-center text-sm">
+          Slow connection detected. Content will load progressively.
+        </div>
+      )}
+
       <Element name="dashboard">
-        <DashboardMenu />
+        <Suspense>
+          <DashboardMenu />
+        </Suspense>
       </Element>
-      <Element name="att-section">
-        <Main data={predictedAtt} />
+
+      <Element name="att-section" className="transition-all duration-500 ease-in-out" style={blurPulseStyle}>
+        <Suspense fallback={<LoadingFallback />}>
+          {predictedAtt.length > 0 && <Main data={predictedAtt} />}
+        </Suspense>predict
       </Element>
+
       <Element name="marks-section">
-        <MarkCards data={dataMarks} arr={courseTitles} />
+        <Suspense fallback={<LoadingFallback />}>
+          {dataMarks.length > 0 && <MarkCards data={dataMarks} arr={courseTitles} />}
+        </Suspense>
       </Element>
+
+      <Suspense>
+        <AttMarkSwitch />
+      </Suspense>
     </div>
   );
 }
