@@ -55,7 +55,7 @@ export async function fetchCalender({
       }
     };
 
-    const updateCacheMetadata = (data: any) => {
+    const updateCacheMetadata = (data: object) => {
       try {
         const timestamp = Date.now();
         
@@ -65,14 +65,14 @@ export async function fetchCalender({
           "September": 9, "October": 10, "November": 11, "December": 12
         };
         
-        const availableMonths = Object.keys(data || {})
+        const availableMonths = Object.keys(data)
           .map(monthName => monthNameToNumber[monthName as keyof typeof monthNameToNumber])
           .filter(month => month !== undefined);
         
         const metadata = {
           timestamp,
           expiresAt: timestamp + cacheExpiry,
-          monthCount: Object.keys(data || {}).length || 0,
+          monthCount: Object.keys(data).length || 0,
           availableMonths: availableMonths
         };
         
@@ -109,7 +109,7 @@ export async function fetchCalender({
           if (cachedResponse) {
             const data = await cachedResponse.json();
             console.log("Serving calendar from cache:", {
-              monthCount: Object.keys(data || {}).length || 0
+              monthCount: Object.keys(data).length || 0
             });
             
             if (updateCache) {
@@ -198,7 +198,7 @@ export async function fetchCalender({
     }
   }
 
-  async function preloadMissingMonths(existingData: {}) {
+  async function preloadMissingMonths(existingData: object) {
     try {
       const allMonths = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
       

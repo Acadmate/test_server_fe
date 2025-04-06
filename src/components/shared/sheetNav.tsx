@@ -10,6 +10,8 @@ import { memo, useMemo, useCallback } from "react";
 import { Github } from "lucide-react";
 import { BsWhatsapp } from "react-icons/bs";
 import { signout } from "@/actions/signout";
+import logo from "../../../public/logo.png"
+import Image from "next/image";
 
 const menu = [
   { name: "Att% and Marks", icon: <IoPerson />, link: "/attendance" },
@@ -55,10 +57,16 @@ function SheetSideComponent() {
     ));
   }, [pathname]);
 
+  if (pathname === "/" || pathname === "/login") {
+    return null;
+  }  
+
   return (
     <div className="hidden lg:flex flex-col w-[25vw] h-screen fixed left-0 top-0 z-40 pl-2 py-2 rounded-xl">
       <div className="h-full w-full bg-white dark:bg-[#0F0F0F] shadow-md border px-4 py-6 rounded-xl relative">
-        <h1 className="text-3xl font-extrabold text-center mb-6">Acadmate</h1>
+        <div className="text-3xl font-extrabold text-center mb-4">
+          <Image src={logo} alt="logo" width={100} height={100} className="w-full h-8 object-contain" />
+        </div>
         <div className="mb-4">
           <p className="text-sm font-bold mb-1">Quick Tip!</p>
           <p className="text-sm">

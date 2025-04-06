@@ -5,8 +5,8 @@ import "tippy.js/dist/tippy.css";
 import "tippy.js/themes/translucent.css";
 import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
-import { useState, useEffect } from "react";
-import usePredictedAtt from "@/store/tempAtt";
+import { useState } from "react";
+// import usePredictedAtt from "@/store/tempAtt";
 import { fetchAttendance } from "@/actions/attendanceFetch";
 import usePredictedButton from "@/store/predictButtonState";
 import { IoMdCloseCircle } from "react-icons/io";
@@ -40,7 +40,6 @@ interface CourseRecord {
 }
 
 export default function CalendarPredict() {
-  const { setPredictedAtt, predictedAtt } = usePredictedAtt();
   const [lastDate, setLastDate] = useState("");
   const { predictedButton, setPredictedButton } = usePredictedButton();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -89,7 +88,7 @@ export default function CalendarPredict() {
     try {
       const att = await fetchAttendance();
       if (att && att.attendance) {
-        setPredictedAtt(att.attendance);
+        // setPredictedAtt(att.attendance);
         setPredictedButton(0);
       }
     } catch (error) {
@@ -402,7 +401,7 @@ export default function CalendarPredict() {
 
       // Update the state with the new attendance data
       console.log("Setting updated attendance:", updatedAttendance);
-      setPredictedAtt(updatedAttendance);
+      // setPredictedAtt(updatedAttendance);
       setPredictedButton(1);
       
     } catch (error) {

@@ -36,13 +36,11 @@ const CalendarDay = memo(
   React.forwardRef<HTMLDivElement, {
     event: EventData;
     isCurrentDay: boolean;
-    index: number;
     monthName: string;
     currentMonth: number;
   }>(({ 
     event,
     isCurrentDay,
-    index,
     monthName,
     currentMonth,
   }, ref) => {
@@ -148,7 +146,6 @@ function MainCal({ data }: CalendarProps) {
               key={`${monthName}-${index}`}
               event={event}
               isCurrentDay={index + 1 === currentDay}
-              index={index}
               monthName={monthName}
               currentMonth={month as number}
               ref={index + 1 === currentDay ? currentDayRef : null}

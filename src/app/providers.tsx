@@ -3,13 +3,14 @@ import { ThemeProvider } from "next-themes";
 import { memo } from "react";
 import { Github } from "lucide-react";
 import { BsWhatsapp } from "react-icons/bs";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 function ProvidersComponent({ children }: { children: React.ReactNode }) {
-  
+  const pathname = usePathname();
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <div className="lg:ml-[25vw]">
+      <div className={`${pathname === "/" || pathname === "/login" ? "" : "lg:ml-[25vw]" }`}>
         {children}
         <div className="mt-auto px-4 pb-20 lg:hidden">
           <h2 className="text-lg font-bold mb-3">Join Our Community</h2>

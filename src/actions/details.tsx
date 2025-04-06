@@ -32,7 +32,7 @@ export async function fetchDetails({
   };
 
   // Function to update cache metadata
-  const updateCacheMetadata = (data: string | any[]) => {
+  const updateCacheMetadata = (data: string | unknown[]) => {
     try {
       const timestamp = Date.now();
       const metadata = {

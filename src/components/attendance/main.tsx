@@ -1,5 +1,5 @@
 "use client";
-import { memo, useCallback, useState, useEffect } from "react";
+import { memo, useState, useEffect } from "react";
 import Margin from "@/components/attendance/margin";
 import dynamic from "next/dynamic";
 import Title from "../shared/title";

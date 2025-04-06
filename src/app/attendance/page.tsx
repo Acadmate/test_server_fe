@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, lazy } from "react";
 import { useRouter } from "next/navigation";
-import { fetchAttendance, getAttendanceCacheStats, clearAttendanceCache } from "@/actions/attendanceFetch";
+import { fetchAttendance, getAttendanceCacheStats } from "@/actions/attendanceFetch";
 import { fetchOrder } from "@/actions/orderFetch";
 import { scroller, Element } from "react-scroll";
 import { TbRefresh } from "react-icons/tb";
@@ -35,12 +35,18 @@ export default function Attendance() {
   const router = useRouter();
   const [dataMarks, setDataMarks] = useState<MarksRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const { setPredictedAtt, predictedAtt } = usePredictedAtt();
   const { section } = useScrollMrks();
   const { setPredictedButton } = usePredictedButton();
-  const [cacheStats, setCacheStats] = useState<any>(null);
+  const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
   const [courseTitles, setCourseTitles] = useState<Record<string, string>>({});
+
+  type CacheStats = {
+    exists: boolean;
+    isExpired: boolean;
+    timestamp: string;
+    expiresIn: number;
+  };
 
   useEffect(() => {
     const titles = predictedAtt.reduce((acc: Record<string, string>, record) => {
@@ -74,7 +80,12 @@ export default function Attendance() {
 
   const updateCacheStats = () => {
     const stats = getAttendanceCacheStats();
-    setCacheStats(stats);
+    setCacheStats({
+      exists: stats.exists,
+      timestamp: stats.timestamp || "",
+      isExpired: stats.isExpired || false,
+      expiresIn: stats.expiresIn || 0,
+    });
     return stats;
   };
 
@@ -97,7 +108,10 @@ export default function Attendance() {
           updateCacheStats();
         }
 
-        const orderData = JSON.parse(localStorage.getItem("order") || "{}");
+        let orderData
+        if (typeof window !== 'undefined') {
+          orderData = JSON.parse(localStorage.getItem("order") || "{}");
+        }
         const nowUTC = new Date();
         const currentUTCDate = nowUTC.toUTCString().split(" ")[0];
 
@@ -114,10 +128,6 @@ export default function Attendance() {
         }
       } catch (error) {
         console.error("Error fetching data:", error);
-        if ((error as any)?.response?.status === 401) {
-          router.replace("/login");
-        }
-        setError(true);
       } finally {
         setLoading(false);
       }
@@ -142,7 +152,6 @@ export default function Attendance() {
       }
     } catch (error) {
       console.error("Error fetching attendance:", error);
-      setError(true);
       router.push("/login");
     } finally {
       setLoading(false);
@@ -161,10 +170,19 @@ export default function Attendance() {
   // Detect slow network connection
   const [isSlowConnection, setIsSlowConnection] = useState(false);
   useEffect(() => {
-    if ("connection" in navigator && (navigator as any).connection) {
-      const connection = (navigator as any).connection;
+    type NetworkInformation = {
+      effectiveType: string;
+      addEventListener: (type: string, listener: () => void) => void;
+      removeEventListener: (type: string, listener: () => void) => void;
+    };
+
+    const connection = (navigator as Navigator & { connection?: NetworkInformation }).connection;
+
+    if (connection) {
       const updateConnectionStatus = () => {
-        setIsSlowConnection(connection.effectiveType === "slow-2g" || connection.effectiveType === "2g");
+        setIsSlowConnection(
+          connection.effectiveType === "slow-2g" || connection.effectiveType === "2g"
+        );
       };
       updateConnectionStatus();
       connection.addEventListener("change", updateConnectionStatus);

@@ -20,7 +20,7 @@ const FULL_MONTH_MAP = {
 type MonthKey = keyof typeof FULL_MONTH_MAP;
 type MonthNavigateProps = {
   availableMonths: number[]; // Array of month numbers (1-12) that have data
-  calendarData: Record<string, any>;
+  calendarData: Record<string, unknown>;
 };
 
 function MonthNavigate({ availableMonths, calendarData }: MonthNavigateProps) {
@@ -34,7 +34,7 @@ function MonthNavigate({ availableMonths, calendarData }: MonthNavigateProps) {
         .map(monthName => {
           // Find the month number from the month name
           const entry = Object.entries(FULL_MONTH_MAP).find(
-            ([_, name]) => name === monthName
+            ([, name]) => name === monthName
           );
           return entry ? parseInt(entry[0]) : null;
         })

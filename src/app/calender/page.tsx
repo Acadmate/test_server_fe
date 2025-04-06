@@ -1,11 +1,39 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { fetchCalender, getCalendarCacheStats } from "@/actions/calendarFetch";
 import Title from "@/components/shared/title";
 import { TbRefresh } from "react-icons/tb";
 import { Skeleton } from "@/components/ui/skeleton";
+
+// Define proper types for our calendar data
+interface CalendarEvent {
+  title: string;
+  date: string;
+  description?: string;
+}
+
+interface CalendarMonth {
+  [day: number]: CalendarEvent[];
+}
+
+interface CalendarData {
+  [month: string]: CalendarMonth;
+}
+
+// Define cache stats interface
+interface CacheStats {
+  exists: boolean;
+  timestamp: string;
+  isExpired: boolean;
+  expiresIn: number; // minutes
+}
+
+// Define fetch options interface
+interface FetchOptions {
+  forceRefresh: boolean;
+  updateCache: boolean;
+}
 
 // Lazy load components
 const MonthNavigate = dynamic(() => import("@/components/calendar/month_navigate"), {
@@ -15,21 +43,20 @@ const MonthNavigate = dynamic(() => import("@/components/calendar/month_navigate
 const MainCal = dynamic(() => import("@/components/calendar/main"), {
   loading: () =>
     <div className="w-full flex flex-col items-center justify-center p-2">
-      {[Array(4)].map((_, i) => (
+      {[...Array(4)].map((_, i) => (
         <Skeleton key={i} className="h-[125px] w-full rounded-xl mt-2" />
       ))}
     </div>
 });
 
 export default function Calendar() {
-  const router = useRouter();
-  const [calendarData, setCalendarData] = useState<any>(null);
+  const [calendarData, setCalendarData] = useState<CalendarData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [cacheStats, setCacheStats] = useState<any>(null);
+  const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
 
   // Memoized function to update cache stats
   const updateCacheStats = useCallback(() => {
-    const stats = getCalendarCacheStats();
+    const stats = getCalendarCacheStats() as CacheStats;
     setCacheStats(stats);
     return stats;
   }, []);
@@ -48,7 +75,7 @@ export default function Calendar() {
     // Extract available months from the data
     return Object.keys(calendarData)
       .map(monthName => monthNameToNumber[monthName])
-      .filter(month => month !== undefined)
+      .filter((month): month is number => month !== undefined)
       .sort((a, b) => a - b);
   }, [calendarData]);
 
@@ -60,7 +87,7 @@ export default function Calendar() {
       const fetchedCalendar = await fetchCalender({
         forceRefresh: true,
         updateCache: true
-      });
+      } as FetchOptions) as CalendarData | null;
 
       if (fetchedCalendar) {
         setCalendarData(fetchedCalendar);
@@ -84,7 +111,7 @@ export default function Calendar() {
       const fetchedCalendar = await fetchCalender({
         forceRefresh: !stats.exists || stats.isExpired,
         updateCache: true
-      });
+      } as FetchOptions) as CalendarData | null;
 
       if (fetchedCalendar) {
         setCalendarData(fetchedCalendar);
@@ -193,7 +220,14 @@ export default function Calendar() {
       </div>
       <Title />
       <div className={`transition-all duration-300 ${blurPulseStyle}`}>
-        <MainCal data={calendarData} />
+        <MainCal
+          data={Object.fromEntries(
+            Object.entries(calendarData).map(([month, days]) => [
+              month,
+              Object.values(days).flat(),
+            ])
+          )}
+        />
       </div>
     </div>
   );

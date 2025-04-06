@@ -3,7 +3,6 @@ import axios from "axios";
 import { fetchOrder } from "./orderFetch";
 import { fetchDetails } from "./details";
 import { fetchCalender } from "./calendarFetch";
-import { fetchDayOrderFromCalendar } from "./orderFetch";
 
 /**
  * Fetches attendance data with advanced caching options
@@ -34,7 +33,7 @@ export async function fetchAttendance({
     }
   };
 
-  const updateCacheMetadata = (data: { attendance: string | any[]; marks: string | any[]; }) => {
+  const updateCacheMetadata = (data: { attendance: string | unknown[]; marks: string | unknown[]; }) => {
     try {
       const timestamp = Date.now();
       const metadata = {
