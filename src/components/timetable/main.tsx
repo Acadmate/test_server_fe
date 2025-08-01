@@ -33,7 +33,7 @@ interface TimetableEntry {
 export default function Timetable() {
   const router = useRouter();
   const [order, setOrder] = useState(0);
-  const check = localStorage.getItem("order");
+  const check = parseInt(localStorage.getItem("order") || "0", 10);
   const captureRef = useRef<HTMLDivElement | null>(null);
   const [nowSlot, setnowSlots] = useState(-1);
   const currentSlotRef = useRef<HTMLDivElement | null>(null);
@@ -65,7 +65,7 @@ export default function Timetable() {
 
     setnowSlots(currentSlot(hr, min));
     setOrder(
-      savedOrder > 0 && savedOrder <= parsedTimetable.length ? savedOrder : 1
+      savedOrder
     );
     setTimeTable(parsedTimetable);
   }, []);
@@ -144,7 +144,7 @@ export default function Timetable() {
   
   return (
     <>
-      {check !== "off" ? (
+      {check !== 0 ? (
         <div className="h-[175vh] lg:h-[90vh]">
           <div className="flex flex-row w-full lg:w-[74vw] justify-between my-2 px-8">
             <div className="flex flex-row gap-4">

@@ -1,5 +1,6 @@
 "use client";
 import axios from "axios";
+import { clearAuthData } from "@/lib/api";
 
 /**
  * Signs out the user and clears all application cache data
@@ -21,12 +22,16 @@ export async function signout() {
       }
     );
 
+    // Clear auth data after successful signout
+    clearAuthData();
     console.log("Sign out successful");
     return response.data;
   } catch (error) {
     console.error("Error during sign out:", error);
     try {
       await clearAllCacheData();
+      // Clear auth data even if API call failed
+      clearAuthData();
       return { success: false, localDataCleared: true };
     } catch (cacheError) {
       console.error("Error clearing cache during failed signout:", cacheError);
@@ -40,8 +45,9 @@ export async function signout() {
  * @returns {Promise<void>}
  */
 async function clearAllCacheData() {
-  localStorage.clear();
-
+  // Clear all localStorage except auth data (which will be cleared by clearAuthData)
+  localStorage.removeItem("kill");
+  
   if ("caches" in window) {
     try {
       const cacheNames = [
@@ -75,6 +81,7 @@ async function clearAllCacheData() {
  * @returns {boolean} Whether user appears to be signed in
  */
 export function isUserSignedIn() {
+  const hasAuthToken = Boolean(localStorage.getItem("authToken"));
   const hasAuthData = Boolean(localStorage.getItem("kill"));
-  return hasAuthData;
+  return hasAuthToken || hasAuthData;
 }

@@ -8,7 +8,6 @@ const withPWA = require("next-pwa")({
     /app-build-manifest\.json$/,
     /middleware-manifest\.json$/,
     /build-manifest\.json$/,
-    /chunks\/.*$/,
   ],
 
   // We'll adjust the precaching strategy to ensure pages are properly cached

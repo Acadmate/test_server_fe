@@ -5,11 +5,12 @@ import { Providers } from "./providers";
 import { Navbar } from "@/components/shared/navbar";
 import dynamic from "next/dynamic";
 import ServiceWorkerUpdate from "./ServiceWorkerUpdate";
+import { Suspense } from "react";
 
 // Load Menu component dynamically with loading fallback
 const Menu = dynamic(() => import("@/components/shared/menu"), {
   ssr: false,
-  loading: () => <div className="flex flex-row items-center justify-center h-screen w-screen lg:w-[73vw] lg:ml-[27vw]">
+  loading: () => <div className="fixed top-0 left-0 bottom-0 right-0 flex flex-row items-center justify-center h-screen w-screen lg:w-[73vw] lg:ml-[27vw] bg-gray-300 dark:bg-[#0F0F0F]">
     <div className="ui-abstergo">
       <div className="abstergo-loader">
         <div></div>
@@ -95,9 +96,11 @@ export default function RootLayout({
   
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${roboto.className} antialiased min-h-screen`}>
-        <Menu />
+      <body className={`${roboto.className} antialiased min-h-screen relative`}>
+      <Suspense fallback={null}>
         <Navbar />
+        <Menu />
+      </Suspense>
         <SheetSide />
         <Providers>{children}</Providers>
         <ServiceWorkerUpdate />

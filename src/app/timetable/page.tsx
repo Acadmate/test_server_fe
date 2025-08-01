@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo, Suspense, lazy, useRef } from "react";
 import dynamic from "next/dynamic";
-import { fetchDetails, getTimetableCacheStats } from "@/actions/details";
+import { fetchTimetable, getTimetableCacheStats } from "@/actions/timetableFetch";
 import { fetchOrder } from "@/actions/orderFetch";
 import { TbRefresh } from "react-icons/tb";
 import { IoCaretForwardCircle, IoCaretBackCircleSharp } from "react-icons/io5";
@@ -33,7 +33,7 @@ export default function TimetablePage() {
   const [timeTable, setTimeTable] = useState<Timetable[]>([]);
   const [order, setOrder] = useState(1);
   const [click, setClick] = useState(0);
-  const [check, setCheck] = useState("on"); // Default value without localStorage
+  const [check, setCheck] = useState(0); // Default value without localStorage
   
   interface CacheStats {
     exists: boolean;
@@ -50,7 +50,9 @@ export default function TimetablePage() {
   // Initialize client-side only variables
   useEffect(() => {
     // Only access localStorage on the client side
-    setCheck(localStorage.getItem("order") || "on");
+    const storedOrder = parseInt(localStorage.getItem("order") || "0");
+    setCheck(storedOrder);
+    console.log("Stored order:", storedOrder);
   }, []);
 
   const updateCacheStats = useCallback(() => {
@@ -62,14 +64,15 @@ export default function TimetablePage() {
   const refreshTimetable = useCallback(async () => {
     setLoading(true);
     try {
-      const timetableData = await fetchDetails({ forceRefresh: true });
-      if (timetableData) {
+      const timetableData = await fetchTimetable({ forceRefresh: true });
+      console.log("Timetable data:", timetableData);
+      if (timetableData && Array.isArray(timetableData)) {
         setTimeTable(timetableData);
         fetchOrder({ forceRefresh: true }).catch(err => console.error("Error fetching order:", err));
         updateCacheTimestamp("timetable");
         updateCacheStats();
       } else {
-        throw new Error("Failed to fetch timetable");
+        throw new Error("Failed to fetch timetable or invalid data format");
       }
     } catch (error) {
       console.error("Error refreshing timetable:", error);
@@ -83,11 +86,13 @@ export default function TimetablePage() {
     setLoading(true);
     try {
       const stats = updateCacheStats();
-      const timetableData = await fetchDetails({
+      const timetableData = await fetchTimetable({
         forceRefresh: !stats.exists || stats.isExpired
       });
 
-      if (timetableData) {
+      console.log("Initialize timetable data:", timetableData);
+      
+      if (timetableData && Array.isArray(timetableData)) {
         setTimeTable(timetableData);
         updateCacheTimestamp("timetable");
         updateCacheStats();
@@ -95,11 +100,11 @@ export default function TimetablePage() {
         // Move localStorage access to client-side only
         if (typeof window !== 'undefined') {
           const rawOrder = localStorage.getItem("order");
-          const savedOrder = rawOrder && !isNaN(Number(rawOrder)) ? Number(rawOrder) : 1;
-          setOrder(savedOrder > 0 && savedOrder <= timetableData.length ? savedOrder : 1);
+          console.log("Raw order from localStorage:", rawOrder);
+          setOrder(parseInt(rawOrder || "1", 10));
         }
       } else {
-        throw new Error("Failed to fetch timetable");
+        throw new Error("Failed to fetch timetable or invalid data format");
       }
     } catch (error) {
       console.error("Error initializing timetable data:", error);
@@ -183,9 +188,12 @@ export default function TimetablePage() {
     }
     : {};
 
-  // Memoize current day's timetable to prevent unnecessary re-renders
+  // Fix array indexing - convert 1-based order to 0-based array index
   const currentDayTimetable = useMemo(() => {
-    return timeTable[order - 1] || null;
+    if (!timeTable || timeTable.length === 0) return null;
+    // Ensure order is within bounds and convert to 0-based index
+    const index = Math.max(0, Math.min(order - 1, timeTable.length - 1));
+    return timeTable[index] || null;
   }, [timeTable, order]);
 
   // Make sure we have client-side rendering before showing localStorage-dependent content
@@ -198,8 +206,17 @@ export default function TimetablePage() {
     return <LoadingSkeleton />;
   }
 
+  // Add debugging info
+  console.log("Debug info:", {
+    check,
+    order,
+    click,
+    timeTableLength: timeTable.length,
+    currentDayTimetable: currentDayTimetable?.day
+  });
+
   return (
-    check === "off" && click === 0 ? (
+    check === 0 && order === 0 && click === 0 ? (
       <div className="flex flex-col items-center justify-center w-full h-[85vh] my-5 gap-4">
         <Animation />
         <div className="text-3xl dark:text-green-400 font-extrabold">
@@ -298,7 +315,15 @@ export default function TimetablePage() {
             <LoadingSkeleton />
           ) : error ? (
             <div className="h-screen w-screen flex items-center justify-center">
-              {currentDayTimetable?.day || "No Data"}
+              <div className="text-center">
+                <p className="text-xl text-red-500 mb-4">Failed to load timetable</p>
+                <button 
+                  onClick={refreshTimetable}
+                  className="bg-green-400 text-black px-4 py-2 rounded"
+                >
+                  Try Again
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -325,21 +350,23 @@ export default function TimetablePage() {
                         <div
                           key={periodIndex}
                           ref={periodIndex === currentSlot ? currentSlotRef : null}
-                          className={`flex flex-row rounded py-1 px-2 w-full text-lg md:text-xl font-bold gap-2 ${periodIndex === currentSlot
-                            ? "border-2 border-[#C1FF72] border-dashed"
-                            : ""
-                            }`}
+                          className={`flex flex-row rounded py-1 px-2 w-full text-lg md:text-xl font-bold gap-2 ${
+                            periodIndex === currentSlot
+                              ? "border-2 border-[#C1FF72] border-dashed"
+                              : ""
+                          }`}
                         >
                           <div className="flex flex-col items-center justify-center w-[70px] bg-gray-100 md:w-[20vw] md:h-[8vh] text-center text-base md:text-lg dark:bg-black rounded-[20px] p-2">
                             {period.timeSlot}
                           </div>
                           <div
-                            className={`flex flex-row ${period.period.includes("P") && period.course
-                              ? "bg-green-300/40 dark:bg-[#15241b] dark:text-[#C1FF72]"
-                              : !period.period.includes("P") && period.course
-                                ? "bg-orange-300/40 dark:bg-[#2e2a14] dark:text-[#FFDD70]"
-                                : "bg-gray-100 dark:bg-black text-gray-900 dark:text-white"
-                              } w-full rounded-[20px] items-center justify-center text-center`}
+                            className={`flex flex-row ${
+                              period.period.includes("P") && period.course
+                                ? "bg-green-300/40 dark:bg-[#15241b] dark:text-[#C1FF72]"
+                                : !period.period.includes("P") && period.course
+                                  ? "bg-orange-300/40 dark:bg-[#2e2a14] dark:text-[#FFDD70]"
+                                  : "bg-gray-100 dark:bg-black text-gray-900 dark:text-white"
+                            } w-full rounded-[20px] items-center justify-center text-center`}
                           >
                             {period.course?.CourseTitle || ""}
                           </div>
@@ -347,7 +374,11 @@ export default function TimetablePage() {
                       ))}
                   </div>
                 ) : (
-                  <p>No timetable data available.</p>
+                  <div className="text-center p-8">
+                    <p className="text-xl mb-4">No timetable data available</p>
+                    <p className="text-gray-500">TimeTable length: {timeTable.length}</p>
+                    <p className="text-gray-500">Current order: {order}</p>
+                  </div>
                 )}
               </div>
 
@@ -357,7 +388,7 @@ export default function TimetablePage() {
                 className="hidden lg:flex flex-col"
                 style={blurPulseStyle}
               >
-                {currentDayTimetable ? (
+                {currentDayTimetable && timeTable.length > 0 ? (
                   <div className="flex flex-col">
                     <div className="flex flex-row justify-end gap-[15px]">
                       {currentDayTimetable.periods.slice(0, -2).map((period) => (
@@ -381,12 +412,13 @@ export default function TimetablePage() {
                           {item.periods.slice(0, -2).map((period, periodIndex) => (
                             <div
                               key={`${item.day}-${period.period}-${periodIndex}`}
-                              className={`flex flex-row w-[6vw] ${period.period.includes("P") && period.course
-                                ? "bg-green-300/40 dark:bg-[#15241b] dark:text-[#C1FF72]"
-                                : !period.period.includes("P") && period.course
-                                  ? "bg-orange-300/40 dark:bg-[#2e2a14] dark:text-[#FFDD70]"
-                                  : "bg-gray-100 dark:bg-black text-gray-900 dark:text-white"
-                                } rounded-[12px] items-center justify-center text-center text-xs p-2`}
+                              className={`flex flex-row w-[6vw] ${
+                                period.period.includes("P") && period.course
+                                  ? "bg-green-300/40 dark:bg-[#15241b] dark:text-[#C1FF72]"
+                                  : !period.period.includes("P") && period.course
+                                    ? "bg-orange-300/40 dark:bg-[#2e2a14] dark:text-[#FFDD70]"
+                                    : "bg-gray-100 dark:bg-black text-gray-900 dark:text-white"
+                              } rounded-[12px] items-center justify-center text-center text-xs p-2`}
                             >
                               {period.course?.CourseTitle
                                 ? period.course?.CourseTitle.length > 30
@@ -400,7 +432,11 @@ export default function TimetablePage() {
                     </div>
                   </div>
                 ) : (
-                  <p>No timetable data available.</p>
+                  <div className="text-center p-8">
+                    <p className="text-xl mb-4">No timetable data available</p>
+                    <p className="text-gray-500">TimeTable length: {timeTable.length}</p>
+                    <p className="text-gray-500">Current order: {order}</p>
+                  </div>
                 )}
               </div>
 

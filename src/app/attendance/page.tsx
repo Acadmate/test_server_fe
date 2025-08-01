@@ -152,7 +152,7 @@ export default function Attendance() {
       }
     } catch (error) {
       console.error("Error fetching attendance:", error);
-      router.push("/login");
+      
     } finally {
       setLoading(false);
     }
@@ -249,7 +249,7 @@ export default function Attendance() {
       <Element name="att-section" className="transition-all duration-500 ease-in-out" style={blurPulseStyle}>
         <Suspense fallback={<LoadingFallback />}>
           {predictedAtt.length > 0 && <Main data={predictedAtt} />}
-        </Suspense>predict
+        </Suspense>
       </Element>
 
       <Element name="marks-section">

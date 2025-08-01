@@ -2,25 +2,24 @@
 import axios from "axios";
 
 /**
- * Fetches timetable data with advanced caching options
+ * Fetches user info data with advanced caching options
  * @param {Object} options - Fetch options
  * @param {boolean} options.forceRefresh - Whether to bypass cache and force a fresh fetch
  * @param {boolean} options.updateCache - Whether to update the cache with new data
- * @param {number} options.cacheExpiry - Cache expiry time in milliseconds (default: 6 hours)
- * @returns {Promise<Object>} Timetable data
+ * @param {number} options.cacheExpiry - Cache expiry time in milliseconds (default: 4 hours)
+ * @returns {Promise<Object>} User info data
  */
-export async function fetchDetails({ 
-  forceRefresh = false, 
+export async function fetchUserInfo({
+  forceRefresh = false,
   updateCache = true,
-  cacheExpiry = 6 * 60 * 60 * 1000 // 6h
+  cacheExpiry = 4 * 60 * 60 * 1000 // 4h
 } = {}) {
-  console.log(`fetchDetails: ${forceRefresh ? 'Forcing refresh' : 'Using cache if available'}`);
+  console.log(`fetchUserInfo: ${forceRefresh ? 'Forcing refresh' : 'Using cache if available'}`);
   const api_url = process.env.NEXT_PUBLIC_API_URL;
-  const CACHE_NAME = "timetable-cache";
-  const CACHE_KEY = "/timetable";
-  const CACHE_METADATA_KEY = "timetable-metadata";
+  const CACHE_NAME = "userinfo-cache";
+  const CACHE_KEY = "/info";
+  const CACHE_METADATA_KEY = "userinfo-metadata";
 
-  // Function to get cache metadata
   const getCacheMetadata = () => {
     try {
       const metadata = localStorage.getItem(CACHE_METADATA_KEY);
@@ -31,14 +30,14 @@ export async function fetchDetails({
     }
   };
 
-  // Function to update cache metadata
-  const updateCacheMetadata = (data: string | unknown[]) => {
+  const updateCacheMetadata = (data: any) => {
     try {
       const timestamp = Date.now();
       const metadata = {
         timestamp,
         expiresAt: timestamp + cacheExpiry,
-        dayCount: data?.length || 0
+        hasUser: !!data.user,
+        advisorCount: data.advisors?.length || 0
       };
       localStorage.setItem(CACHE_METADATA_KEY, JSON.stringify(metadata));
       return metadata;
@@ -47,55 +46,51 @@ export async function fetchDetails({
     }
   };
 
-  // Check if cache is expired
   const isCacheExpired = () => {
     const metadata = getCacheMetadata();
     if (!metadata) return true;
     return Date.now() > metadata.expiresAt;
   };
 
-  // Try to get data from cache if not forcing refresh
   if (!forceRefresh && "caches" in window) {
     try {
-      // Check if cache is expired via metadata
       if (!isCacheExpired()) {
         const cache = await caches.open(CACHE_NAME);
         const cachedResponse = await cache.match(CACHE_KEY);
 
         if (cachedResponse) {
           const data = await cachedResponse.json();
-          console.log("Serving timetable from cache:", {
-            dayCount: data?.length || 0
+          console.log("Serving from cache:", {
+            hasUser: !!data.user,
+            advisorCount: data.advisors?.length || 0
           });
           return data;
         }
       } else {
-        console.log("Timetable cache expired, fetching fresh data");
+        console.log("Cache expired, fetching fresh data");
       }
     } catch (error) {
-      console.error("Error reading from timetable cache:", error);
-      // Continue to fetch if cache read fails
+      console.error("Error reading from cache:", error);
     }
   }
 
-  // Fetch fresh data from API
   try {
-    console.log("Fetching timetable from API");
-    const response = await axios.post(
-      `${api_url}/timetable`,
-      {},
+    console.log("Fetching from API");
+    const response = await axios.get(
+      `${api_url}/info`,
       {
         headers: {
           "Cache-Control": "no-store, no-cache, must-revalidate",
-          "Pragma": "no-cache"
+          "Pragma": "no-cache",
+          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
         },
         withCredentials: true,
       }
     );
 
-    const data = response.data;
+    const data = response.data.data;
+    console.log(data);
 
-    // Update cache if requested
     if (updateCache && "caches" in window && data) {
       try {
         const cache = await caches.open(CACHE_NAME);
@@ -107,27 +102,26 @@ export async function fetchDetails({
         });
         await cache.put(CACHE_KEY, responseToCache);
         updateCacheMetadata(data);
-        console.log("Timetable cache updated with fresh data");
+        console.log("Cache updated with fresh data");
       } catch (error) {
-        console.error("Error updating timetable cache:", error);
+        console.error("Error updating cache:", error);
       }
     }
 
     return data;
   } catch (error) {
-    console.error("Error fetching timetable:", error);
-    // If API fetch fails, try to serve stale cache as fallback
+    console.error("Error fetching user info:", error);
     if ("caches" in window) {
       try {
         const cache = await caches.open(CACHE_NAME);
         const cachedResponse = await cache.match(CACHE_KEY);
-        
+
         if (cachedResponse) {
-          console.log("API request failed. Serving stale timetable cache as fallback");
-          return cachedResponse.json();
+          console.log("API request failed. Serving stale cache as fallback");
+          return await cachedResponse.json();
         }
       } catch (cacheError) {
-        console.error("Error serving stale timetable cache:", cacheError);
+        console.error("Error serving stale cache:", cacheError);
       }
     }
     return null;
@@ -135,18 +129,46 @@ export async function fetchDetails({
 }
 
 /**
- * Clears the timetable cache
+ * Gets user batch from cached data
+ * @returns {Promise<number|null>} User batch
+ */
+export async function getUserBatch() {
+  try {
+    const data = await fetchUserInfo();
+    return data?.user?.batch || null;
+  } catch (error) {
+    console.error("Error getting user batch:", error);
+    return null;
+  }
+}
+
+/**
+ * Gets user semester from cached data
+ * @returns {Promise<number|null>} User semester
+ */
+export async function getUserSemester() {
+  try {
+    const data = await fetchUserInfo();
+    return data?.user?.semester || null;
+  } catch (error) {
+    console.error("Error getting user semester:", error);
+    return null;
+  }
+}
+
+/**
+ * Clears the user info cache
  * @returns {Promise<boolean>} Success status
  */
-export async function clearTimetableCache() {
+export async function clearUserInfoCache() {
   if ("caches" in window) {
     try {
-      await caches.delete("timetable-cache");
-      localStorage.removeItem("timetable-metadata");
-      console.log("Timetable cache cleared");
+      await caches.delete("userinfo-cache");
+      localStorage.removeItem("userinfo-metadata");
+      console.log("User info cache cleared");
       return true;
     } catch (error) {
-      console.error("Error clearing timetable cache:", error);
+      console.error("Error clearing cache:", error);
       return false;
     }
   }
@@ -154,21 +176,22 @@ export async function clearTimetableCache() {
 }
 
 /**
- * Gets timetable cache statistics
+ * Gets cache statistics
  * @returns {Object} Cache statistics
  */
-export function getTimetableCacheStats() {
-  const metadata = localStorage.getItem("timetable-metadata");
+export function getUserInfoCacheStats() {
+  const metadata = localStorage.getItem("userinfo-metadata");
   if (!metadata) return { exists: false };
-  
+
   const parsedMetadata = JSON.parse(metadata);
   const now = Date.now();
-  
+
   return {
     exists: true,
     timestamp: new Date(parsedMetadata.timestamp).toLocaleString(),
     isExpired: now > parsedMetadata.expiresAt,
-    expiresIn: Math.max(0, Math.floor((parsedMetadata.expiresAt - now) / 1000 / 60)),
-    dayCount: parsedMetadata.dayCount
+    expiresIn: Math.max(0, Math.floor((parsedMetadata.expiresAt - now) / 1000 / 60)), // minutes
+    hasUser: parsedMetadata.hasUser,
+    advisorCount: parsedMetadata.advisorCount
   };
 }

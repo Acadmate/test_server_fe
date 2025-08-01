@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import axios from "axios";
 import dotenv from "dotenv";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
+import { setCookie } from "@/lib/cookies";
 
 import {
   Form,
@@ -24,6 +25,14 @@ const formSchema = z.object({
   username: z.string().max(25),
   password: z.string().max(50),
 });
+
+// Define the expected response type
+interface LoginResponse {
+  email: string;
+  message: string;
+  success: boolean;
+  token: string;
+}
 
 export default function LoginForm() {
   dotenv.config();
@@ -58,10 +67,27 @@ export default function LoginForm() {
       });
 
       if (response.status === 200) {
-        localStorage.setItem("stats", "true");
-        localStorage.setItem("kill", JSON.stringify({}));
-        localStorage.setItem("user", values.username);
-        router.replace("/attendance");
+        const data: LoginResponse = response.data;
+        
+        if (data.success && data.token) {
+          // Store authentication data in localStorage
+          localStorage.setItem("authToken", data.token);
+          localStorage.setItem("userEmail", data.email);
+          localStorage.setItem("authMessage", data.message);
+          localStorage.setItem("stats", "true");
+          localStorage.setItem("kill", JSON.stringify({}));
+          localStorage.setItem("user", values.username);
+          
+          // Set cookie for middleware (expires in 7 days)
+          setCookie("token", data.token, 7);
+          
+          // Set up axios defaults to include Bearer token for future requests
+          axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+          
+          router.replace("/attendance");
+        } else {
+          setError(data.message || "Login failed. Please check your credentials.");
+        }
       } else {
         setError("Login failed. Please check your credentials.");
       }

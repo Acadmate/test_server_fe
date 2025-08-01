@@ -133,9 +133,8 @@ export async function fetchCalender({
         ? { months: specificMonths } 
         : {};
       
-      const response = await axios.post(
+      const response = await axios.get(
         `${api_url}/calendar`,
-        payload,
         {
           headers: {
             "Cache-Control": "no-store, no-cache, must-revalidate",
@@ -145,7 +144,7 @@ export async function fetchCalender({
         }
       );
 
-      let data = response.data;
+      let data = response.data.data;
       
       if (specificMonths.length > 0 && updateCache && "caches" in window) {
         try {

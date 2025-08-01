@@ -1,13 +1,17 @@
 "use client";
 import { ThemeProvider } from "next-themes";
-import { memo } from "react";
+import { memo, useEffect } from "react";
 import { Github } from "lucide-react";
 import { BsWhatsapp } from "react-icons/bs";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { initializeAuth } from "@/lib/api";
 
 function ProvidersComponent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  useEffect(() => {
+    initializeAuth();
+  }, []);
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <div className={`${pathname === "/" || pathname === "/login" ? "" : "lg:ml-[25vw]" }`}>

@@ -11,7 +11,7 @@ import { fetchAttendance } from "@/actions/attendanceFetch";
 import usePredictedButton from "@/store/predictButtonState";
 import { IoMdCloseCircle } from "react-icons/io";
 import { fetchCalender } from "@/actions/calendarFetch";
-import { fetchDetails } from "@/actions/details";
+import { fetchTimetable } from "@/actions/timetableFetch";
 
 interface Period {
   course?: {
@@ -115,7 +115,7 @@ export default function CalendarPredict() {
     const FROM_CURRENT_DAY_TO_OFF_START: string[] = [];
 
     const caldata = await fetchCalender();
-    const timetableData = await fetchDetails();
+    const timetableData = await fetchTimetable();
 
     if (!range?.from || !range?.to) return ClassesAttendedTillDayOff;
     const formatDateToString = (date: Date): string => {
@@ -216,7 +216,7 @@ export default function CalendarPredict() {
     const temp: string[] = [];
     const FROM_CURRENT_DAY_TO_OFF_START: string[] = [];
     const caldata = await fetchCalender();
-    const timetableData = await fetchDetails();
+    const timetableData = await fetchTimetable();
     if (!range?.from) return FROM_CURRENT_DAY_TO_OFF_START;
     const offStart = new Date(range.from);
     const today = new Date();
@@ -304,7 +304,7 @@ export default function CalendarPredict() {
     setIsProcessing(true);
     try {
       const caldata = await fetchCalender();
-      const timetableData = await fetchDetails();
+      const timetableData = await fetchTimetable();
       const att = await fetchAttendance();
       
       if (!att || !att.attendance || att.attendance.length === 0) {
@@ -416,7 +416,7 @@ export default function CalendarPredict() {
     setIsProcessing(true);
     try {
       const caldata = await fetchCalender();
-      const timetableData = await fetchDetails();
+      const timetableData = await fetchTimetable();
       console.log(caldata, timetableData)
       if (Object.keys(caldata).length === 0 || !timetableData || timetableData.length === 0) {
         setPredictedButton(-1);
