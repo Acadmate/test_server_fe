@@ -70,20 +70,8 @@ export default function LoginForm() {
         const data: LoginResponse = response.data;
         
         if (data.success && data.token) {
-          // Store authentication data in localStorage
-          localStorage.setItem("authToken", data.token);
-          localStorage.setItem("userEmail", data.email);
-          localStorage.setItem("authMessage", data.message);
-          localStorage.setItem("stats", "true");
-          localStorage.setItem("kill", JSON.stringify({}));
-          localStorage.setItem("user", values.username);
-          
-          // Set cookie for middleware (expires in 7 days)
           setCookie("token", data.token, 7);
-          
-          // Set up axios defaults to include Bearer token for future requests
-          axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
-          
+                    
           router.replace("/attendance");
         } else {
           setError(data.message || "Login failed. Please check your credentials.");

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { RxCalendar } from "react-icons/rx";
 import { IoPerson, IoCalculator } from "react-icons/io5";
 import { GrCafeteria } from "react-icons/gr";
+import { IoInformationCircleOutline } from "react-icons/io5";
 import { MdOutlineSchedule } from "react-icons/md";
 import { usePathname } from "next/navigation";
 import { BiSolidZap } from "react-icons/bi";
@@ -21,7 +22,6 @@ export default function Menu() {
 
   const isLargeScreen = () => window.innerWidth >= 1024;
 
-  // 🔁 Handle double tap on body to show/hide menu
   useEffect(() => {
     if (isLargeScreen()) return;
 
@@ -40,7 +40,6 @@ export default function Menu() {
     return () => hammer.destroy();
   }, [isVisible, hide, show]);
 
-  // 🎯 Animate open state
   useEffect(() => {
     if (isVisible) {
       setTimeout(() => setIsMenuFullyOpened(true), 150);
@@ -49,7 +48,6 @@ export default function Menu() {
     }
   }, [isVisible]);
 
-  // 🚫 Prevent scroll when menu is visible
   useEffect(() => {
     document.body.style.overflow = isVisible ? "hidden" : "";
     return () => {
@@ -57,7 +55,6 @@ export default function Menu() {
     };
   }, [isVisible]);
 
-  // 🖐 Close menu on tap inside menu
   useEffect(() => {
     if (isLargeScreen() || !menuRef.current) return;
 
@@ -74,45 +71,69 @@ export default function Menu() {
     return () => menuHammer.destroy();
   }, [hide]);
 
-  // 🧠 Memoize menu items
   const menuItems = useMemo(() => [
-    { id: "calendar", href: "/calender", icon: <RxCalendar />, label: "Calendar" },
+    { 
+      id: "calendar", 
+      href: "/calender", 
+      icon: <RxCalendar className="text-2xl" />, 
+      label: "Calendar" 
+    },
+    { 
+      id: "your info", 
+      href: "/info", 
+      icon: <IoInformationCircleOutline className="text-2xl" />, 
+      label: "Your Info" 
+    },
     {
       id: "dashboard",
       href: "/attendance",
-      icon: <IoPerson />,
-      label: <span className="text-nowrap">Dashboard</span>,
+      icon: <IoPerson className="text-2xl" />,
+      label: "Dashboard",
     },
-    { id: "gpacalc", href: "/gpacalc", icon: <IoCalculator />, label: "GPA Calc" },
-    { id: "timetable", href: "/timetable", icon: <MdOutlineSchedule />, label: "Timetable" },
-    { id: "messmenu", href: "/messmenu", icon: <GrCafeteria />, label: "Mess Menu" },
+    { 
+      id: "gpacalc", 
+      href: "/gpacalc", 
+      icon: <IoCalculator className="text-2xl" />, 
+      label: "GPA Calc" 
+    },
+    { 
+      id: "timetable", 
+      href: "/timetable", 
+      icon: <MdOutlineSchedule className="text-2xl" />, 
+      label: "Timetable" 
+    },
+    { 
+      id: "messmenu", 
+      href: "/messmenu", 
+      icon: <GrCafeteria className="text-2xl" />, 
+      label: "Mess Menu" 
+    },
     {
       id: "supadocs",
       href: "/supadocs",
       icon: (
-        <div className="flex flex-row z-10 items-center">
-          <span className="relative flex flex-row items-center inline-block">
-            <span className="text-xl"><FaFolder /></span>
-            <span className="absolute text-white top-[8px] transform translate-x-1/4 -translate-y-1/4 text-[12px] rotate-210">
-              <BiSolidZap />
-            </span>
-          </span>
+        <div className="relative flex items-center justify-center text-2xl">
+          <FaFolder />
+          <BiSolidZap className="absolute text-white text-xs top-1 right-0 transform translate-x-1/2 -translate-y-1/2" />
         </div>
       ),
       label: "SupaDocs",
     },
   ], []);
 
-  // 💡 Memoize positions for circular layout
+  const sortedMenuItems = useMemo(() => {
+    return menuItems.sort((a, b) => a.label.localeCompare(b.label));
+  }, [menuItems]);
+
   const menuPositions = useMemo(() => {
     return menuItems.map((_, index) => {
       const angle = (index / menuItems.length) * 2 * Math.PI;
       return {
-        top: `calc(50% - 40px + ${Math.sin(angle) * 120}px)`,
-        left: `calc(50% - 40px + ${Math.cos(angle) * 120}px)`,
+        top: `calc(50% - 50px + ${Math.sin(angle) * 130}px)`,
+        left: `calc(50% - 50px + ${Math.cos(angle) * 130}px)`,
       };
     });
-  }, [menuItems.length]);
+  }, [menuItems]);
 
   const handleMenuClick = (item: typeof menuItems[number]) => {
     if (section !== item.id) {
@@ -131,14 +152,16 @@ export default function Menu() {
           isVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       >
-        <div className="relative w-[400px] h-[400px]">
+        <div className="relative w-[500px] h-[500px]">
           <div className="relative w-fit h-full mx-auto">
-            {menuItems.map((item, index) => (
+            {sortedMenuItems.map((item, index) => (
               <Link
                 prefetch
                 key={item.id}
-                className={`absolute flex flex-col items-center justify-center w-fit h-fit text-xs font-bold p-1 rounded ${
-                  path === item.href ? "bg-[#C1FF72]/80 text-black" : ""
+                className={`absolute flex flex-col items-center justify-center w-20 h-20 text-sm font-semibold gap-1 rounded-xl transition-all duration-200 ${
+                  path === item.href 
+                    ? "bg-[#C1FF72]/90 text-black shadow-lg scale-110" 
+                    : "hover:bg-white/10 hover:scale-105"
                 }`}
                 href={isMenuFullyOpened ? item.href : "#"}
                 onClick={(e) => {
@@ -150,8 +173,12 @@ export default function Menu() {
                 }}
                 style={menuPositions[index]}
               >
-                <span className="text-2xl">{item.icon}</span>
-                {item.label}
+                <div className="flex items-center justify-center h-8 w-8">
+                  {item.icon}
+                </div>
+                <span className="text-center text-xs leading-tight whitespace-nowrap">
+                  {item.label}
+                </span>
               </Link>
             ))}
           </div>

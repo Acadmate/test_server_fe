@@ -1,6 +1,6 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import CalendarPredict from "./calenderPredict";
 import usePredictedButton from "@/store/predictButtonState";
 
@@ -8,7 +8,7 @@ export default function Title() {
   const { predictedButton } = usePredictedButton();
   const [path, setPath] = useState("/");
   const pathname = usePathname();
-  function calc() {
+  const calc = useCallback(() => {
     if (pathname == "/calender") {
       return "Calendar";
     } else if (pathname == "/timetable") {
@@ -24,11 +24,11 @@ export default function Title() {
     } else {
       return "Imp Links";
     }
-  }
+  }, [pathname, predictedButton]);
 
   useEffect(() => {
     setPath(calc());
-  }, [pathname, predictedButton]);
+  }, [pathname, predictedButton, calc]);
 
   return (
     <div className="flex flex-row w-full justify-between items-center my-2 px-4">

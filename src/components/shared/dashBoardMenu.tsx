@@ -1,6 +1,7 @@
 import { RxCalendar } from "react-icons/rx";
 import { GrScorecard, GrCafeteria } from "react-icons/gr";
 import { IoPerson, IoCalculator } from "react-icons/io5";
+import { IoInformationCircleOutline } from "react-icons/io5";
 import { MdOutlineSchedule } from "react-icons/md";
 import { BiSolidZap } from "react-icons/bi";
 import { FaExclamationCircle } from "react-icons/fa";
@@ -30,6 +31,12 @@ export default function DashboardMenu() {
       ),
     },
     {
+      id: "Your Info",
+      href: "/info",
+      icon: <IoInformationCircleOutline />,
+      label: "Your Info",
+    },
+    {
       id: "gpacalc",
       href: "/gpacalc",
       icon: <IoCalculator />,
@@ -41,7 +48,6 @@ export default function DashboardMenu() {
       icon: <MdOutlineSchedule />,
       label: "Timetable",
     },
-    // { id: "links", href: "/links", icon: <IoIosLink />, label: "Imp Links" },
     {
       id: "messmenu",
       href: "/messmenu",
@@ -65,8 +71,6 @@ export default function DashboardMenu() {
       ),
       label: "SupaDocs",
     },
-
-    // { id: "logs", href: "/logs", icon: <IoIosLink />, label: "Logs" },
   ];
 
   return (

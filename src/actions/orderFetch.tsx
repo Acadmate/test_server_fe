@@ -1,5 +1,5 @@
 "use client";
-import axios from "axios";
+import { apiClient } from "@/lib/api";
 
 /**
  * Fetches the day order from the calendar cache.
@@ -113,7 +113,7 @@ export async function fetchOrder({ forceRefresh = false, attempt = 1 } = {}) {
 
   try {
     console.debug("Fetching day order from API...");
-    const response = await axios.get(
+    const response = await apiClient.get(
       `${api_url}/order`,
       { 
         headers: {

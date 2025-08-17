@@ -1,5 +1,5 @@
 "use client";
-import axios from "axios";
+import { apiClient } from "@/lib/api";
 import { fetchOrder } from "./orderFetch";
 import { fetchTimetable } from "./timetableFetch";
 import { fetchCalender } from "./calendarFetch";
@@ -80,13 +80,12 @@ export async function fetchAttendance({
 
   try {
     console.log("Fetching from API");
-    const response = await axios.get(
+    const response = await apiClient.get(
       `${api_url}/attendance`,
       {
         headers: {
           "Cache-Control": "no-store, no-cache, must-revalidate",
           "Pragma": "no-cache",
-          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
         },
         withCredentials: true,
       }

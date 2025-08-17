@@ -2,6 +2,7 @@
 
 import { RxCalendar } from "react-icons/rx";
 import { IoPerson, IoCalculator } from "react-icons/io5";
+import { IoInformationCircleOutline } from "react-icons/io5";
 import { GrCafeteria } from "react-icons/gr";
 import { MdOutlineSchedule } from "react-icons/md";
 import Link from "next/link";
@@ -19,6 +20,7 @@ const menu = [
   { name: "Calendar", icon: <RxCalendar />, link: "/calender" },
   { name: "Gpa Calc", icon: <IoCalculator />, link: "/gpacalc" },
   { name: "Mess Menu", icon: <GrCafeteria />, link: "/messmenu" },
+  { name: "Your Info", icon: <IoInformationCircleOutline />, link: "/info" }
 ];
 
 function SheetSideComponent() {

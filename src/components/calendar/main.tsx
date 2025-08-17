@@ -103,15 +103,15 @@ const CalendarDay = memo(
 CalendarDay.displayName = "CalendarDay";
 
 function MainCal({ data }: CalendarProps) {
-  const currentDate = new Date();
   const [currentDay, setCurrentDay] = useState<number | null>(null);
   const currentDayRef = useRef<HTMLDivElement | null>(null);
   const { month, setMonth } = useMonth();
 
   useEffect(() => {
+    const currentDate = new Date();
     setCurrentDay(currentDate.getDate());
     setMonth(currentDate.getMonth() + 1);
-  }, []);
+  }, [setMonth]); // Include setMonth since it's from a custom hook
 
   useEffect(() => {
     if (currentDayRef.current) {

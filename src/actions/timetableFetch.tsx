@@ -1,5 +1,5 @@
 "use client";
-import axios from "axios";
+import { apiClient } from "@/lib/api";
 import { getUserBatch } from "./infoFerch";
 
 /**
@@ -83,7 +83,7 @@ export async function fetchTimetable({
   try {
     const batch = await getUserBatch();
     console.log("Fetching timetable from API");
-    const response = await axios.get( 
+    const response = await apiClient.get( 
       `${api_url}/timetable?batch=${batch}`,
       {
         headers: {

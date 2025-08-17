@@ -1,5 +1,5 @@
 "use client";
-import axios from "axios";
+import { apiClient } from "@/lib/api";
 
 /**
  * Fetches calendar data with dynamic month caching
@@ -129,11 +129,7 @@ export async function fetchCalender({
     try {
       console.log("Fetching calendar from API");
       
-      const payload = specificMonths.length > 0 
-        ? { months: specificMonths } 
-        : {};
-      
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${api_url}/calendar`,
         {
           headers: {

@@ -1,10 +1,10 @@
 "use client";
-import axios from "axios";
+import { apiClient } from "@/lib/api";
 
 export async function fetchLogs() {
   const api_url = process.env.NEXT_PUBLIC_API_URL;
   try {
-    const response = await axios.get(`${api_url}/logs`, {
+    const response = await apiClient.get(`${api_url}/logs`, {
       withCredentials: true,
     });
 

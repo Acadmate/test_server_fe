@@ -6,7 +6,7 @@ import "tippy.js/themes/translucent.css";
 import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 import { useState } from "react";
-// import usePredictedAtt from "@/store/tempAtt";
+import usePredictedAtt from "@/store/tempAtt";
 import { fetchAttendance } from "@/actions/attendanceFetch";
 import usePredictedButton from "@/store/predictButtonState";
 import { IoMdCloseCircle } from "react-icons/io";
@@ -24,11 +24,13 @@ interface AttendanceEntry {
   Slot: string;
   "Hours Absent": string;
   "Course Code": string;
+  "Course Title": string;
   "Hours Conducted": string;
   type: string;
   conducted: number;
   Category: string;
   "Attn %": string;
+  "Faculty Name": string;
 }
 
 interface Day {
@@ -42,6 +44,7 @@ interface CourseRecord {
 export default function CalendarPredict() {
   const [lastDate, setLastDate] = useState("");
   const { predictedButton, setPredictedButton } = usePredictedButton();
+  const { setPredictedAtt } = usePredictedAtt();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const RevMonthMap: { [key: number]: string } = {
@@ -88,7 +91,7 @@ export default function CalendarPredict() {
     try {
       const att = await fetchAttendance();
       if (att && att.attendance) {
-        // setPredictedAtt(att.attendance);
+        setPredictedAtt(att.attendance);
         setPredictedButton(0);
       }
     } catch (error) {
@@ -401,7 +404,7 @@ export default function CalendarPredict() {
 
       // Update the state with the new attendance data
       console.log("Setting updated attendance:", updatedAttendance);
-      // setPredictedAtt(updatedAttendance);
+      setPredictedAtt(updatedAttendance);
       setPredictedButton(1);
       
     } catch (error) {

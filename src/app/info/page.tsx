@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export interface UserInfo {
-  registrationNumber: string
-  name: string
-  batch: number
-  mobile: number
-  program: string
-  department: string
-  semester: number
+  registrationNumber?: string
+  name?: string
+  batch?: number
+  mobile?: number
+  program?: string
+  department?: string
+  semester?: number
 }
 
 export interface Advisor {
@@ -23,8 +23,8 @@ export interface Advisor {
 }
 
 export interface InfoResponse {
-  user: UserInfo
-  advisors: Advisor[]
+  user?: UserInfo
+  advisors?: Advisor[]
 }
 
 // Skeleton component for loading state
@@ -63,8 +63,8 @@ export default function UserInfoPage() {
         throw new Error("Failed to fetch user information or data is incomplete.");
       }
       setUserInfo(data);
-    } catch (err: any) {
-      setError(err.message || 'An unknown error occurred.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
       console.error(err);
     } finally {
       setLoading(false);
@@ -140,26 +140,26 @@ export default function UserInfoPage() {
                   <User className="w-8 h-8 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground">{user.name}</h2>
-                  <p className="text-muted-foreground">{user.registrationNumber}</p>
+                  <h2 className="text-2xl font-bold text-foreground">{user?.name || 'N/A'}</h2>
+                  <p className="text-muted-foreground">{user?.registrationNumber || 'N/A'}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <InfoItem icon={GraduationCap} label="Program" value={user.program} />
-                  <InfoItem icon={BookOpen} label="Department" value={user.department} />
-                  <InfoItem icon={Phone} label="Mobile" value={user.mobile} />
+                  <InfoItem icon={GraduationCap} label="Program " value={user?.program || 'N/A'} />
+                  <InfoItem icon={BookOpen} label="Department" value={user?.department || 'N/A'} />
+                  <InfoItem icon={Phone} label="Mobile" value={user?.mobile || 'N/A'} />
                 </div>
 
                 <div className="space-y-4">
                   <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg">
                     <p className="text-sm text-primary font-medium">Batch</p>
-                    <p className="text-2xl font-bold text-foreground">{user.batch}</p>
+                    <p className="text-2xl font-bold text-foreground">{user?.batch || 'N/A'}</p>
                   </div>
                   <div className="bg-green-400/5 border border-green-400/20 p-4 rounded-lg">
                     <p className="text-sm text-green-400 font-medium">Semester</p>
-                    <p className="text-2xl font-bold text-foreground">{user.semester}</p>
+                    <p className="text-2xl font-bold text-foreground">{user?.semester || 'N/A'}</p>
                   </div>
                 </div>
               </div>

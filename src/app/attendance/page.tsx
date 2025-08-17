@@ -31,13 +31,24 @@ type MarksRecord = {
   "Test Performance": string;
 };
 
+type AttendanceRecord = {
+  "Course Code": string;
+  "Course Title": string;
+  Category: string;
+  "Faculty Name": string;
+  Slot: string;
+  "Hours Conducted": string;
+  "Hours Absent": string;
+  "Attn %": string;
+};
+
 export default function Attendance() {
   const router = useRouter();
   const [dataMarks, setDataMarks] = useState<MarksRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const { setPredictedAtt, predictedAtt } = usePredictedAtt();
   const { section } = useScrollMrks();
-  const { setPredictedButton } = usePredictedButton();
+  const { setPredictedButton, predictedButton } = usePredictedButton();
   const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
   const [courseTitles, setCourseTitles] = useState<Record<string, string>>({});
 
@@ -103,6 +114,7 @@ export default function Attendance() {
         });
 
         if (attendanceData) {
+          setOriginalAttendance(attendanceData.attendance || []);
           setPredictedAtt(attendanceData.attendance || []);
           setDataMarks(attendanceData.marks || []);
           updateCacheStats();
@@ -190,6 +202,12 @@ export default function Attendance() {
     }
   }, []);
 
+  // Fix the displayData logic - it should show predicted data when button is 1
+  const [originalAttendance, setOriginalAttendance] = useState<AttendanceRecord[]>([]);
+
+  // This should actually be:
+  const displayData = predictedButton === 1 ? predictedAtt : originalAttendance;
+
   return (
     <div className="flex flex-col gap-2 w-screen lg:w-[73vw] mx-auto">
       {/* Global styles for blurPulse animation */}
@@ -248,7 +266,7 @@ export default function Attendance() {
 
       <Element name="att-section" className="transition-all duration-500 ease-in-out" style={blurPulseStyle}>
         <Suspense fallback={<LoadingFallback />}>
-          {predictedAtt.length > 0 && <Main data={predictedAtt} />}
+          {displayData.length > 0 && <Main data={displayData} />}
         </Suspense>
       </Element>
 

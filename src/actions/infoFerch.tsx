@@ -1,5 +1,28 @@
 "use client";
-import axios from "axios";
+import { apiClient } from "@/lib/api";
+
+// Define proper interfaces instead of using any
+interface UserInfo {
+  batch?: number;
+  semester?: number;
+  name?: string;
+  registrationNumber?: string;
+  program?: string;
+  department?: string;
+  mobile?: number;
+}
+
+interface Advisor {
+  name: string;
+  role: string;
+  email: string;
+  phone: string;
+}
+
+interface UserInfoData {
+  user?: UserInfo;
+  advisors?: Advisor[];
+}
 
 /**
  * Fetches user info data with advanced caching options
@@ -7,13 +30,13 @@ import axios from "axios";
  * @param {boolean} options.forceRefresh - Whether to bypass cache and force a fresh fetch
  * @param {boolean} options.updateCache - Whether to update the cache with new data
  * @param {number} options.cacheExpiry - Cache expiry time in milliseconds (default: 4 hours)
- * @returns {Promise<Object>} User info data
+ * @returns {Promise<UserInfoData | null>} User info data
  */
 export async function fetchUserInfo({
   forceRefresh = false,
   updateCache = true,
   cacheExpiry = 4 * 60 * 60 * 1000 // 4h
-} = {}) {
+} = {}): Promise<UserInfoData | null> {
   console.log(`fetchUserInfo: ${forceRefresh ? 'Forcing refresh' : 'Using cache if available'}`);
   const api_url = process.env.NEXT_PUBLIC_API_URL;
   const CACHE_NAME = "userinfo-cache";
@@ -30,7 +53,7 @@ export async function fetchUserInfo({
     }
   };
 
-  const updateCacheMetadata = (data: any) => {
+  const updateCacheMetadata = (data: UserInfoData) => {
     try {
       const timestamp = Date.now();
       const metadata = {
@@ -76,13 +99,12 @@ export async function fetchUserInfo({
 
   try {
     console.log("Fetching from API");
-    const response = await axios.get(
+    const response = await apiClient.get(
       `${api_url}/info`,
       {
         headers: {
           "Cache-Control": "no-store, no-cache, must-revalidate",
           "Pragma": "no-cache",
-          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
         },
         withCredentials: true,
       }
@@ -132,7 +154,7 @@ export async function fetchUserInfo({
  * Gets user batch from cached data
  * @returns {Promise<number|null>} User batch
  */
-export async function getUserBatch() {
+export async function getUserBatch(): Promise<number | null> {
   try {
     const data = await fetchUserInfo();
     return data?.user?.batch || null;
@@ -146,12 +168,12 @@ export async function getUserBatch() {
  * Gets user semester from cached data
  * @returns {Promise<number|null>} User semester
  */
-export async function getUserSemester() {
+export async function getUserSemester(): Promise<number | null> {
   try {
     const data = await fetchUserInfo();
     return data?.user?.semester || null;
   } catch (error) {
-    console.error("Error getting user semester:", error);
+    console.error("Error getting user batch:", error);
     return null;
   }
 }
@@ -160,7 +182,7 @@ export async function getUserSemester() {
  * Clears the user info cache
  * @returns {Promise<boolean>} Success status
  */
-export async function clearUserInfoCache() {
+export async function clearUserInfoCache(): Promise<boolean> {
   if ("caches" in window) {
     try {
       await caches.delete("userinfo-cache");

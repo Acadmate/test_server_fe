@@ -1,6 +1,6 @@
 "use client";
-import axios from "axios";
 import { clearAuthData } from "@/lib/api";
+import { apiClient } from "@/lib/api";
 
 /**
  * Signs out the user and clears all application cache data
@@ -11,7 +11,7 @@ export async function signout() {
 
   try {
     await clearAllCacheData();
-    const response = await axios.post(
+    const response = await apiClient.post(
       `${api_url}/signout`,
       {},
       {
@@ -81,7 +81,6 @@ async function clearAllCacheData() {
  * @returns {boolean} Whether user appears to be signed in
  */
 export function isUserSignedIn() {
-  const hasAuthToken = Boolean(localStorage.getItem("authToken"));
   const hasAuthData = Boolean(localStorage.getItem("kill"));
-  return hasAuthToken || hasAuthData;
+  return hasAuthData;
 }

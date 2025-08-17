@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import Toggle from "../shared/switchTheme";
 import { IoCaretForwardCircle, IoCaretBackCircleSharp } from "react-icons/io5";
 import dynamic from "next/dynamic";
@@ -37,7 +37,7 @@ export default function Timetable() {
   const captureRef = useRef<HTMLDivElement | null>(null);
   const [nowSlot, setnowSlots] = useState(-1);
   const currentSlotRef = useRef<HTMLDivElement | null>(null);
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
 
   const [timeTable, setTimeTable] = useState<TimetableEntry[]>([]);
 
@@ -64,11 +64,9 @@ export default function Timetable() {
     const min = now.getMinutes();
 
     setnowSlots(currentSlot(hr, min));
-    setOrder(
-      savedOrder
-    );
+    setOrder(savedOrder);
     setTimeTable(parsedTimetable);
-  }, []);
+  }, [now]);
 
   useEffect(() => {
     if (currentSlotRef.current) {
