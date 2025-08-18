@@ -1,194 +1,198 @@
 "use client";
 import { apiClient } from "@/lib/api";
 
-/**
- * Fetches the day order from the calendar cache.
- * @returns {Promise<string|number|null>} Day order from calendar, "off" for holiday, or null if not found.
- */
-export async function fetchDayOrderFromCalendar(): Promise<string | number | null> {
-  console.debug("Starting fetchDayOrderFromCalendar...");
-  try {
-    const today = new Date();
-    const currentDate = today.getDate().toString();
-    const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-    const currentMonth = monthNames[today.getMonth()];
+type DayOrder = number | "off";
+type FallbackResult = DayOrder | null;
 
-    console.debug("Current date:", currentDate, "Current month:", currentMonth);
+const STORAGE_KEYS = {
+  order: "order",
+  timestamp: "order_timestamp",
+} as const;
 
-    if ("caches" in window) {
-      console.debug("Checking calendar cache...");
-      const cache = await caches.open("calendar-cache");
-      const cachedResponse = await cache.match("/calendar");
+const MAX_ATTEMPTS = 2;
+const API_TIMEOUT_MS = 5000;
 
-      if (cachedResponse) {
-        console.debug("Calendar cache found. Parsing data...");
-        const calendarData = await cachedResponse.json();
-        if (calendarData[currentMonth]) {
-          const todayData = calendarData[currentMonth].find(
-            (day: { Date: string; }) => day.Date === currentDate
-          );
+const HOLIDAY_TOKENS = ["holiday"];
+const HOLIDAY_DAYORDER_TOKENS = ["-"];
 
-          if (todayData) {
-            console.debug("Found today's data in calendar cache:", todayData);
+function isBrowser(): boolean {
+  return typeof window !== "undefined";
+}
 
-            if (
-              todayData.DayOrder === "-" ||
-              (todayData.Event && todayData.Event.toLowerCase().includes("holiday"))
-            ) {
-              console.debug("Today is a holiday according to calendar");
-              return "off";
-            } else if (todayData.DayOrder) {
-              console.debug("Using day order from calendar:", todayData.DayOrder);
-              return todayData.DayOrder;
-            }
-          } else {
-            console.debug("Today's data not found in calendar cache.");
-          }
-        } else {
-          console.debug("Current month data not found in calendar cache.");
-        }
-      } else {
-        console.debug("No cached response found for /calendar.");
-      }
-    } else {
-      console.debug("Cache API not available in this environment.");
-    }
-  } catch (calendarError) {
-    console.error("Error checking calendar cache:", calendarError);
+function safeNow(): number {
+  return Date.now();
+}
+
+function toDateStringUTC(date: Date): string {
+  return date.toUTCString().slice(0, 16);
+}
+
+function getTodayKey(): string {
+  return toDateStringUTC(new Date());
+}
+
+function safeParseNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
   }
-
-  console.debug("Returning null from fetchDayOrderFromCalendar.");
   return null;
 }
 
-/**
- * Fetches the current day order with fallback to calendar data for holidays
- * @param {Object} options - Optional configuration
- * @param {boolean} options.forceRefresh - Whether to bypass local storage and force a fresh fetch
- * @returns {Promise<string|number|null>} Day order (number), "0" for holiday, or null on error
- */
-export async function fetchOrder({ forceRefresh = false, attempt = 1 } = {}) {
-  console.debug("Starting fetchOrder with options:", { forceRefresh, attempt });
-  const api_url = process.env.NEXT_PUBLIC_API_URL;
-  const DAY_ORDER_KEY = "order";
-  const DAY_ORDER_TIMESTAMP_KEY = "order_timestamp";
-  const MAX_ATTEMPTS = 2;
+function normalizeDayOrder(value: unknown): DayOrder | null {
+  if (value === "off") return "off";
+  const n = safeParseNumber(value);
+  if (n !== null) return n;
+  return null;
+}
 
-  const shouldUseStoredOrder = () => {
-    console.debug("Checking if stored order should be used...");
-    if (forceRefresh) {
-      console.debug("Force refresh is enabled. Skipping stored order.");
-      return false;
-    }
+interface CalendarEntry {
+  DayOrder?: string;
+  Event?: string;
+}
 
-    try {
-      const timestamp = localStorage.getItem(DAY_ORDER_TIMESTAMP_KEY);
-      if (!timestamp) {
-        console.debug("No timestamp found in local storage.");
-        return false;
-      }
-      const storedDate = new Date(parseInt(timestamp, 10)).toDateString();
-      const currentDate = new Date().toDateString();
+function isHolidayFromCalendarEntry(entry: CalendarEntry): boolean {
+  const dayOrderToken = String(entry?.DayOrder ?? "").trim();
+  const eventLower = String(entry?.Event ?? "").toLowerCase();
+  if (HOLIDAY_DAYORDER_TOKENS.includes(dayOrderToken)) return true;
+  if (HOLIDAY_TOKENS.some(t => eventLower.includes(t))) return true;
+  return false;
+}
 
-      console.debug("Stored date:", storedDate, "Current date:", currentDate);
-      return storedDate === currentDate;
-    } catch (error) {
-      console.error("Error checking day order timestamp:", error);
-      return false;
-    }
-  };
+function getMonthNameUTC(date: Date): string {
+  const monthNames = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+  ];
+  return monthNames[date.getUTCMonth()];
+}
 
-  if (shouldUseStoredOrder()) {
-    const storedOrder = localStorage.getItem(DAY_ORDER_KEY);
-    if (storedOrder !== null) {
-      console.debug("Using stored day order:", storedOrder);
-      return storedOrder;
-    } else {
-      console.debug("Stored day order is null.");
-    }
-  }
+function getUTCDateOfMonth(date: Date): string {
+  return String(date.getUTCDate());
+}
 
+function readStoredOrder(): FallbackResult {
+  if (!isBrowser()) return null;
   try {
-    console.debug("Fetching day order from API...");
-    const response = await apiClient.get(
-      `${api_url}/order`,
-      { 
-        headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate",
-        },
-        withCredentials: true,
-        timeout: 5000,
-      }
-    );
+    const orderRaw = window.localStorage.getItem(STORAGE_KEYS.order);
+    const tsRaw = window.localStorage.getItem(STORAGE_KEYS.timestamp);
+    if (!orderRaw || !tsRaw) return null;
 
-    console.log(response)
-
-    const dayOrder = response.data?.dayOrder;
-    console.debug("API response dayOrder:", dayOrder);
-
-    if (typeof dayOrder === "undefined" || dayOrder === null) {
-      console.debug("Day order is undefined or null.");
-      if (attempt < MAX_ATTEMPTS) {
-        console.warn(`Retrying fetchOrder (attempt ${attempt + 1})...`);
-        const calendarOrder = await fetchDayOrderFromCalendar();
-        if (calendarOrder !== null) {
-          console.debug("Using calendar order as fallback:", calendarOrder);
-          localStorage.setItem(DAY_ORDER_KEY, calendarOrder.toString());
-          localStorage.setItem(DAY_ORDER_TIMESTAMP_KEY, Date.now().toString());
-          return calendarOrder;
-        } else {
-          return fetchOrder({ forceRefresh, attempt: attempt + 1 });
-        }
-      } else {
-        console.warn("Max attempts reached with undefined day order.");
-        return null;
-      }
+    const storedDateKey = toDateStringUTC(new Date(Number(tsRaw)));
+    const todayKey = getTodayKey();
+    if (storedDateKey !== todayKey) {
+      return null;
     }
 
-    console.debug("Storing valid day order in local storage:", dayOrder);
-    localStorage.setItem(DAY_ORDER_KEY, dayOrder.toString());
-    localStorage.setItem(DAY_ORDER_TIMESTAMP_KEY, Date.now().toString());
+    const normalized = normalizeDayOrder(orderRaw);
+    return normalized;
+  } catch {
+    return null;
+  }
+}
 
-    return dayOrder;
-  } catch (error) {
-    console.error("Error fetching day order:", error);
+function writeStoredOrder(value: DayOrder): void {
+  if (!isBrowser()) return;
+  const normalized = normalizeDayOrder(value);
+  if (normalized === null) return;
+  try {
+    window.localStorage.setItem(STORAGE_KEYS.order, String(normalized));
+    window.localStorage.setItem(STORAGE_KEYS.timestamp, String(safeNow()));
+  } catch {
+    // Ignore storage errors
+  }
+}
 
-    console.debug("Attempting to fetch day order from calendar cache...");
-    const calendarOrder = await fetchDayOrderFromCalendar();
-    if (calendarOrder !== null) {
-      console.debug("Using calendar order as fallback:", calendarOrder);
-      localStorage.setItem(DAY_ORDER_KEY, calendarOrder.toString());
-      localStorage.setItem(DAY_ORDER_TIMESTAMP_KEY, Date.now().toString());
-      return calendarOrder;
+export function clearDayOrderCache(): boolean {
+  if (!isBrowser()) return false;
+  try {
+    window.localStorage.removeItem(STORAGE_KEYS.order);
+    window.localStorage.removeItem(STORAGE_KEYS.timestamp);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function fetchDayOrderFromCalendar(): Promise<FallbackResult> {
+  if (!isBrowser() || !("caches" in window)) return null;
+  try {
+    const cache = await caches.open("calendar-cache");
+    const cachedResponse = await cache.match("/calendar");
+    if (!cachedResponse) return null;
+
+    const data = await cachedResponse.json();
+    const now = new Date();
+    const monthName = getMonthNameUTC(now);
+    const dayStr = getUTCDateOfMonth(now);
+
+    const monthData = data?.[monthName];
+    if (!Array.isArray(monthData)) return null;
+
+    const todayEntry = monthData.find((d: CalendarEntry & { Date?: string }) => String(d?.Date) === dayStr);
+    if (!todayEntry) return null;
+
+    if (isHolidayFromCalendarEntry(todayEntry)) {
+      return "off";
     }
+    const normalized = normalizeDayOrder(todayEntry?.DayOrder);
+    return normalized;
+  } catch {
+    return null;
+  }
+}
 
-    const lastResortOrder = localStorage.getItem(DAY_ORDER_KEY);
-    if (lastResortOrder !== null) {
-      console.debug("Using previously stored day order as fallback:", lastResortOrder);
-      return lastResortOrder;
-    }
+// API fetcher with strict validation
+async function fetchDayOrderFromAPI(apiBase: string | undefined): Promise<FallbackResult> {
+  if (!apiBase) return null;
+  try {
+    const response = await apiClient.get(`${apiBase}/order`, {
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+      withCredentials: true,
+      timeout: API_TIMEOUT_MS,
+    });
 
-    console.debug("Returning null from fetchOrder.");
+    const value = response?.data?.dayOrder;
+    const normalized = normalizeDayOrder(value);
+    return normalized;
+  } catch {
     return null;
   }
 }
 
 /**
- * Clears the day order from local storage
- * @returns {boolean} Success status
+ * Fetches the current day order with robust fallback.
+ * Behavior:
+ * - Returns number for normal day, "off" for holiday, or null on error.
+ * - Never writes undefined/null into localStorage.
+ * - Respects same-day cache unless forceRefresh is true.
  */
-export function clearDayOrderCache() {
-  console.debug("Clearing day order cache...");
-  try {
-    localStorage.removeItem("order");
-    localStorage.removeItem("order_timestamp");
-    console.debug("Day order cache cleared successfully.");
-    return true;
-  } catch (error) {
-    console.error("Error clearing day order cache:", error);
-    return false;
+export async function fetchOrder(options: { forceRefresh?: boolean } = {}): Promise<FallbackResult> {
+  const { forceRefresh = false } = options;
+  const apiBase = process.env.NEXT_PUBLIC_API_URL;
+
+  if (!forceRefresh) {
+    const cached = readStoredOrder();
+    if (cached !== null) return cached;
   }
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const apiOrder = await fetchDayOrderFromAPI(apiBase);
+    if (apiOrder !== null) {
+      writeStoredOrder(apiOrder);
+      return apiOrder;
+    }
+  }
+
+  const calendarOrder = await fetchDayOrderFromCalendar();
+  if (calendarOrder !== null) {
+    writeStoredOrder(calendarOrder);
+    return calendarOrder;
+  }
+
+  const lastResort = readStoredOrder();
+  if (lastResort !== null) return lastResort;
+
+  return null;
 }

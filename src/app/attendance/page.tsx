@@ -134,7 +134,7 @@ export default function Attendance() {
         if (!orderData || lastFetchDate !== currentUTCDate) {
           const order = await fetchOrder();
           if (order) {
-            localStorage.setItem("order", JSON.stringify(order.dayOrder));
+            localStorage.setItem("order", JSON.stringify(order));
             localStorage.setItem("order-last-fetch", Date.now().toString());
           }
         }

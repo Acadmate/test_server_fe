@@ -8,10 +8,11 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
+import axios from 'axios';
 import dotenv from "dotenv";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 import { setCookie } from "@/lib/cookies";
+import { setupAuthInterceptor } from "@/lib/api";
 
 import {
   Form,
@@ -71,8 +72,11 @@ export default function LoginForm() {
         
         if (data.success && data.token) {
           setCookie("token", data.token, 7);
-                    
-          router.replace("/attendance");
+          setupAuthInterceptor();
+          axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+          setTimeout(() => {
+            router.replace("/attendance");
+          }, 100);
         } else {
           setError(data.message || "Login failed. Please check your credentials.");
         }
