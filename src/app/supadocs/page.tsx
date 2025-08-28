@@ -9,6 +9,7 @@ import { Folder, RefreshCw, Search, ChevronLeft, File, Calendar, BookOpen, Check
 import { DocumentErrorBoundary } from "@/components/documents/DocumentErrorBoundary";
 import { DocumentTree } from "@/components/documents/DocumentTree";
 import { FileViewerComponent } from "@/components/documents/FileViewer";
+import { ContributeDocuments } from "@/components/documents/Contribute";
 
 // Helper function to check if course names match (case-insensitive with normalization)
 function isCourseMatch(courseName: string, subjectName: string): boolean {
@@ -211,45 +212,78 @@ export default function DocumentsPage() {
 
   return (
     <DocumentErrorBoundary>
+      <style jsx global>{`
+        /* Webkit scrollbar styles for modern browsers */
+        .thin-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+        }
+        
+        .thin-scrollbar::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        
+        .thin-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        
+        .thin-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(156, 163, 175, 0.5);
+          border-radius: 3px;
+        }
+        
+        .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(156, 163, 175, 0.7);
+        }
+        
+        /* Dark mode scrollbar */
+        .dark .thin-scrollbar {
+          scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
+        }
+        
+        .dark .thin-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(75, 85, 99, 0.5);
+        }
+        
+        .dark .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(75, 85, 99, 0.7);
+        }
+        
+        /* Corner where horizontal and vertical scrollbars meet */
+        .thin-scrollbar::-webkit-scrollbar-corner {
+          background: transparent;
+        }
+      `}</style>
+      
       <div className="h-screen overflow-hidden">
         <div className="w-full mx-auto px-4 py-8 h-full flex flex-col">
           {/* Header */}
-          <header className="mb-6 flex-shrink-0">
+          <header className="mb-3 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-1">
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Documents
                 </h1>
                 {documentsTree?.lastUpdated && (
-                  <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                    <Calendar className="w-4 h-4 mr-1" />
+                  <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                    <Calendar className="w-3 h-3 mr-1" />
                     Updated {new Date(documentsTree.lastUpdated).toLocaleDateString()}
                   </div>
                 )}
               </div>
               
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    loadDocumentsTree(true);
-                    loadCoursesWithAvailability();
-                  }}
-                  className="text-gray-600 border-gray-300 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-800"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Refresh
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearCache}
-                  className="text-gray-600 border-gray-300 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-800"
-                >
-                  Clear Cache
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  loadDocumentsTree(true);
+                  loadCoursesWithAvailability();
+                }}
+                className="h-7 w-7 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <RefreshCw className="w-3 h-3" />
+              </Button>
             </div>
           </header>
 
@@ -320,7 +354,7 @@ export default function DocumentsPage() {
                     </div>
                   </div>
                   
-                  <div className="flex-1 overflow-y-auto">
+                  <div className="flex-1 overflow-y-auto thin-scrollbar">
                     {filteredSubjects.map((subject) => (
                       <button
                         key={subject.name}
@@ -349,7 +383,7 @@ export default function DocumentsPage() {
               </aside>
 
               {/* Main Content */}
-              <main className="lg:col-span-4 flex flex-col overflow-hidden">
+              <main className="lg:col-span-4 flex flex-col overflow-hidden gap-3">
                 {selectedSubject ? (
                   <div className="bg-white dark:bg-[#0F0F0F] rounded-lg border border-gray-200 dark:border-[#151515] flex flex-col h-full overflow-hidden">
                     <div className="p-4 border-b border-gray-200 dark:border-[#151515] flex-shrink-0">
@@ -382,7 +416,7 @@ export default function DocumentsPage() {
                       </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4">
+                    <div className="flex-1 overflow-y-auto p-4 thin-scrollbar">
                       {subjectLoading ? (
                         <div className="space-y-3">
                           {[...Array(8)].map((_, i) => (
@@ -405,7 +439,7 @@ export default function DocumentsPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white dark:bg-[#0F0F0F] rounded-lg border border-gray-200 dark:border-[#151515] p-6 overflow-hidden">
+                  <div className="bg-white dark:bg-[#0F0F0F] rounded-lg border border-gray-200 dark:border-[#151515] p-6 overflow-y-auto thin-scrollbar">
                     <div className="mb-6">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                         Your Courses
@@ -456,7 +490,7 @@ export default function DocumentsPage() {
 
                         {/* Courses without Documents */}
                         {coursesWithoutDocuments.length > 0 && (
-      <div>
+                          <div>
                             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                               <XCircle className="w-5 h-5 text-gray-400" />
                               No Materials Yet ({coursesWithoutDocuments.length})
@@ -500,6 +534,7 @@ export default function DocumentsPage() {
                     )}
                   </div>
                 )}
+                <ContributeDocuments />
               </main>
             </div>
           )}

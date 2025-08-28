@@ -4,7 +4,6 @@ import { DocumentItem } from "@/actions/documentFetch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import DocViewer, { DocViewerRenderers } from "react-doc-viewer";
 import {
   Download,
   ExternalLink,
@@ -18,7 +17,6 @@ import {
   ZoomOut,
   RotateCw,
   Share2,
-  Eye,
   AlertTriangle,
 } from "lucide-react";
 
@@ -33,27 +31,26 @@ export function FileViewerComponent({ file, onClose }: FileViewerProps) {
   const [error, setError] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [rotation, setRotation] = useState(0);
-  const [viewMode, setViewMode] = useState<'preview' | 'google'>('preview');
 
   const getFileIcon = (filename: string) => {
     const ext = filename.split(".").pop()?.toLowerCase() || "";
     switch (ext) {
       case "pdf":
-        return <FileText className="w-5 h-5 text-red-500" />;
+        return <FileText className="w-4 h-4 text-red-500" />;
       case "ppt":
       case "pptx":
-        return <FileText className="w-5 h-5 text-orange-500" />;
+        return <FileText className="w-4 h-4 text-orange-500" />;
       case "doc":
       case "docx":
-        return <FileText className="w-5 h-5 text-blue-500" />;
+        return <FileText className="w-4 h-4 text-blue-500" />;
       case "jpg":
       case "jpeg":
       case "png":
       case "gif":
       case "webp":
-        return <ImageIcon className="w-5 h-5 text-green-500" />;
+        return <ImageIcon className="w-4 h-4 text-green-500" />;
       default:
-        return <FileIcon className="w-5 h-5 text-gray-500" />;
+        return <FileIcon className="w-4 h-4 text-gray-500" />;
     }
   };
 
@@ -77,23 +74,24 @@ export function FileViewerComponent({ file, onClose }: FileViewerProps) {
     return "unknown";
   };
 
-  const getFileSize = (url: string) => {
-    // This would need to be implemented with actual file size data
-    return "Loading...";
-  };
-
-  // Google Apps integration for PDFs and Word docs only
+  // Google Docs viewer for Word documents and PDFs
   const getGoogleViewerUrl = useCallback((url: string, type: string) => {
     const encodedUrl = encodeURIComponent(url);
     
     switch (type) {
       case "document":
-        return `https://docs.google.com/document/d/e/${encodedUrl}/pub?embedded=true`;
+        return `https://docs.google.com/gview?url=${encodedUrl}&embedded=true`;
       case "pdf":
         return `https://docs.google.com/viewer?url=${encodedUrl}&embedded=true`;
       default:
         return url;
     }
+  }, []);
+
+  // Office Apps Live viewer for PowerPoint
+  const getOfficeViewerUrl = useCallback((url: string) => {
+    const encodedUrl = encodeURIComponent(url);
+    return `https://view.officeapps.live.com/op/embed.aspx?src=${encodedUrl}`;
   }, []);
 
   const handleDownload = async () => {
@@ -169,7 +167,6 @@ export function FileViewerComponent({ file, onClose }: FileViewerProps) {
     setError(null);
     setZoomLevel(100);
     setRotation(0);
-    setViewMode('preview');
   }, [file]);
 
   useEffect(() => {
@@ -185,24 +182,20 @@ export function FileViewerComponent({ file, onClose }: FileViewerProps) {
 
   if (!file?.url) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg h-full">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2">
             {getFileIcon(file.name)}
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
-                {file.name}
-              </h3>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="text-xs">
-                  {getFileExtension(file.name)}
-                </Badge>
-              </div>
-            </div>
+            <span className="font-medium text-gray-900 dark:text-white text-sm truncate">
+              {file.name}
+            </span>
+            <Badge variant="secondary" className="text-xs">
+              {getFileExtension(file.name)}
+            </Badge>
           </div>
           {onClose && (
-            <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
-              <X className="w-4 h-4" />
+            <Button variant="ghost" size="sm" onClick={onClose} className="h-7 w-7 p-0">
+              <X className="w-3 h-3" />
             </Button>
           )}
         </div>
@@ -222,115 +215,87 @@ export function FileViewerComponent({ file, onClose }: FileViewerProps) {
   }
 
   const fileType = getFileType(file.name);
-  const supportsGoogleViewer = ["document", "pdf"].includes(fileType);
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
-      {/* Enhanced Toolbar */}
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden h-full flex flex-col">
+      {/* Minimal Compact Header */}
       <div className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-4 py-2">
+          {/* Left side - File info */}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             {getFileIcon(file.name)}
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
-                {file.name}
-              </h3>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="text-xs">
-                  {getFileExtension(file.name)}
-                </Badge>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {getFileSize(file.url)}
-                </span>
-              </div>
-            </div>
+            <span className="font-medium text-gray-900 dark:text-white text-sm truncate">
+              {file.name}
+            </span>
+            <Badge variant="secondary" className="text-xs flex-shrink-0">
+              {getFileExtension(file.name)}
+            </Badge>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* View Mode Toggle for supported files (PDFs and Word docs only) */}
-            {supportsGoogleViewer && (
-              <>
-                <Button
-                  variant={viewMode === 'preview' ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode('preview')}
-                  className="h-8"
-                >
-                  <Eye className="w-4 h-4 mr-1" />
-                  Preview
-                </Button>
-                <Button
-                  variant={viewMode === 'google' ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode('google')}
-                  className="h-8"
-                >
-                  <ExternalLink className="w-4 h-4 mr-1" />
-                  Google
-                </Button>
-                <Separator orientation="vertical" className="h-6" />
-              </>
-            )}
-
-            {/* Zoom Controls for images */}
+          {/* Right side - Compact action buttons */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Image-specific controls */}
             {fileType === "image" && (
               <>
-                <Button variant="outline" size="sm" onClick={handleZoomOut} disabled={zoomLevel <= 50}>
-                  <ZoomOut className="w-4 h-4" />
+                <Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={zoomLevel <= 50} className="h-7 w-7 p-0">
+                  <ZoomOut className="w-3 h-3" />
                 </Button>
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400 min-w-[3rem] text-center">
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-400 min-w-[2rem] text-center">
                   {zoomLevel}%
                 </span>
-                <Button variant="outline" size="sm" onClick={handleZoomIn} disabled={zoomLevel >= 200}>
-                  <ZoomIn className="w-4 h-4" />
+                <Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={zoomLevel >= 200} className="h-7 w-7 p-0">
+                  <ZoomIn className="w-3 h-3" />
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleRotate}>
-                  <RotateCw className="w-4 h-4" />
+                <Button variant="ghost" size="sm" onClick={handleRotate} className="h-7 w-7 p-0">
+                  <RotateCw className="w-3 h-3" />
                 </Button>
-                <Separator orientation="vertical" className="h-6" />
+                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
               </>
             )}
 
-            <Button variant="outline" size="sm" onClick={copyShareLink}>
-              <Share2 className="w-4 h-4" />
+            <Button variant="ghost" size="sm" onClick={copyShareLink} className="h-7 w-7 p-0">
+              <Share2 className="w-3 h-3" />
             </Button>
 
-            <Button variant="outline" size="sm" onClick={toggleFullscreen}>
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            <Button variant="ghost" size="sm" onClick={toggleFullscreen} className="h-7 w-7 p-0">
+              {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
             </Button>
 
-            <Button variant="outline" size="sm" onClick={handleDownload}>
-              <Download className="w-4 h-4" />
+            <Button variant="ghost" size="sm" onClick={handleDownload} className="h-7 w-7 p-0">
+              <Download className="w-3 h-3" />
             </Button>
 
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => window.open(file.url, "_blank")}
+              className="h-7 w-7 p-0"
             >
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink className="w-3 h-3" />
             </Button>
 
             {onClose && (
-              <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
-                <X className="w-4 h-4" />
-              </Button>
+              <>
+                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
+                <Button variant="ghost" size="sm" onClick={onClose} className="h-7 w-7 p-0">
+                  <X className="w-3 h-3" />
+                </Button>
+              </>
             )}
           </div>
         </div>
       </div>
 
-      {/* Enhanced File Viewer */}
-      <div className="relative bg-gray-50 dark:bg-gray-900">
+      {/* File Viewer - Now takes more space */}
+      <div className="relative bg-gray-50 dark:bg-gray-900 flex-1">
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-900 z-10">
             <div className="text-center">
               <div className="relative">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-                <div className="absolute inset-0 rounded-full h-12 w-12 border-4 border-blue-200 dark:border-blue-800 mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-3 border-blue-500 border-t-transparent mx-auto mb-3"></div>
+                <div className="absolute inset-0 rounded-full h-8 w-8 border-3 border-blue-200 dark:border-blue-800 mx-auto"></div>
               </div>
-              <p className="text-gray-600 dark:text-gray-300 font-medium">Loading file...</p>
-              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Please wait</p>
+              <p className="text-gray-600 dark:text-gray-300 font-medium text-sm">Loading...</p>
             </div>
           </div>
         )}
@@ -338,30 +303,30 @@ export function FileViewerComponent({ file, onClose }: FileViewerProps) {
         {error && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-900 z-10">
             <div className="text-center max-w-md mx-auto p-6">
-              <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-              <h4 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
+              <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-3" />
+              <h4 className="text-base font-semibold text-red-600 dark:text-red-400 mb-2">
                 Failed to load file
               </h4>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                 {error}
               </p>
-              <div className="flex gap-3 justify-center">
-                <Button onClick={() => window.location.reload()} variant="outline">
-                  <RotateCw className="w-4 h-4 mr-2" />
+              <div className="flex gap-2 justify-center">
+                <Button onClick={() => window.location.reload()} variant="outline" size="sm">
+                  <RotateCw className="w-3 h-3 mr-1" />
                   Retry
                 </Button>
-                <Button onClick={() => window.open(file.url, "_blank")} variant="default">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Open in New Tab
+                <Button onClick={() => window.open(file.url, "_blank")} variant="default" size="sm">
+                  <ExternalLink className="w-3 h-3 mr-1" />
+                  Open
                 </Button>
               </div>
             </div>
           </div>
         )}
 
-        <div className="min-h-[32rem] max-h-[80vh] overflow-auto">
+        <div className="h-full w-full">
           {fileType === "image" && (
-            <div className="w-full h-full flex items-center justify-center p-6">
+            <div className="w-full h-full flex items-center justify-center p-4">
               <img
                 src={file.url}
                 alt={file.name}
@@ -377,8 +342,8 @@ export function FileViewerComponent({ file, onClose }: FileViewerProps) {
 
           {fileType === "pdf" && (
             <iframe
-              src={viewMode === 'google' ? getGoogleViewerUrl(file.url, 'pdf') : file.url}
-              className="w-full h-full border-0 min-h-[32rem]"
+              src={getGoogleViewerUrl(file.url, 'pdf')}
+              className="w-full h-full border-0"
               title={file.name}
               onLoad={handleLoad}
               onError={handleError}
@@ -386,71 +351,43 @@ export function FileViewerComponent({ file, onClose }: FileViewerProps) {
           )}
 
           {fileType === "presentation" && (
-            <div className="w-full h-full min-h-[32rem]">
-              <DocViewer
-                documents={[{ uri: file.url }]}
-                pluginRenderers={DocViewerRenderers}
-                config={{
-                  header: {
-                    disableHeader: true,
-                    disableFileName: true,
-                  },
-                }}
-                style={{ height: '100%', width: '100%' }}
-                onLoad={handleLoad}
-                onError={handleError}
-              />
-            </div>
+            <iframe
+              src={getOfficeViewerUrl(file.url)}
+              className="w-full h-full border-0"
+              title={file.name}
+              onLoad={handleLoad}
+              onError={handleError}
+            />
           )}
 
           {fileType === "document" && (
-            <>
-              {viewMode === 'google' ? (
-                <iframe
-                  src={getGoogleViewerUrl(file.url, 'document')}
-                  className="w-full h-full border-0 min-h-[32rem]"
-                  title={file.name}
-                  onLoad={handleLoad}
-                  onError={handleError}
-                />
-              ) : (
-                <div className="w-full h-full min-h-[32rem]">
-                  <DocViewer
-                    documents={[{ uri: file.url }]}
-                    pluginRenderers={DocViewerRenderers}
-                    config={{
-                      header: {
-                        disableHeader: true,
-                        disableFileName: true,
-                      },
-                    }}
-                    style={{ height: '100%', width: '100%' }}
-                    onLoad={handleLoad}
-                    onError={handleError}
-                  />
-                </div>
-              )}
-            </>
+            <iframe
+              src={getGoogleViewerUrl(file.url, 'document')}
+              className="w-full h-full border-0"
+              title={file.name}
+              onLoad={handleLoad}
+              onError={handleError}
+            />
           )}
 
           {fileType === "unknown" && (
-            <div className="w-full h-full flex items-center justify-center p-8 min-h-[32rem]">
+            <div className="w-full h-full flex items-center justify-center p-8">
               <div className="text-center max-w-md">
-                <FileIcon className="w-20 h-20 text-gray-400 mx-auto mb-6" />
-                <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+                <FileIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
                   File Preview Not Available
                 </h4>
-                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
                   This file type is not supported for preview. Download the file to view it locally.
                 </p>
-                <div className="flex gap-3 justify-center">
-                  <Button onClick={handleDownload} variant="default">
-                    <Download className="w-4 h-4 mr-2" />
-                    Download File
+                <div className="flex gap-2 justify-center">
+                  <Button onClick={handleDownload} variant="default" size="sm">
+                    <Download className="w-3 h-3 mr-1" />
+                    Download
                   </Button>
-                  <Button onClick={() => window.open(file.url, "_blank")} variant="outline">
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Open in New Tab
+                  <Button onClick={() => window.open(file.url, "_blank")} variant="outline" size="sm">
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    Open
                   </Button>
                 </div>
               </div>
