@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo, Suspense, lazy, useRef } from "react";
 import dynamic from "next/dynamic";
-import { fetchTimetable, getTimetableCacheStats } from "@/actions/timetableFetch";
+import { fetchTimetable } from "@/actions/timetableFetch";
 import { fetchOrder } from "@/actions/orderFetch";
-import { TbRefresh } from "react-icons/tb";
 import { IoCaretForwardCircle, IoCaretBackCircleSharp } from "react-icons/io5";
+import RefreshHeader from "@/components/shared/RefreshHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentTimeSlot } from "../../components/hooks/useCurrentTimeSlot";
 import { LoadingSkeleton } from "../../components/timetable/loadingSkilition";
@@ -23,13 +23,6 @@ interface Period {
 interface Timetable {
   day: string;
   periods: Period[];
-}
-
-interface CacheStats {
-  exists: boolean;
-  timestamp?: string;
-  isExpired?: boolean;
-  expiresIn?: number;
 }
 
 // Utils
@@ -67,11 +60,9 @@ export default function TimetablePage() {
   const [error, setError] = useState(false);
 
   const [timeTable, setTimeTable] = useState<Timetable[]>([]);
-  // Use 1-based order in state for UI navigation, consistent everywhere
   const [order, setOrder] = useState<number>(1);
   const [isHoliday, setIsHoliday] = useState<boolean>(false);
 
-  const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
   const currentSlotRef = useRef<HTMLDivElement>(null);
   const captureRef = useRef<HTMLDivElement>(null);
   const currentSlot = useCurrentTimeSlot();
@@ -79,16 +70,9 @@ export default function TimetablePage() {
 
   useEffect(() => setIsClient(true), []);
 
-  const updateCacheStatsMemo = useCallback(() => {
-    const stats = getTimetableCacheStats();
-    setCacheStats(stats);
-    return stats;
-  }, []);
-
   const safeSetOrderFromValue = useCallback((value: number | "off" | null, len: number) => {
     if (value === "off") {
       setIsHoliday(true);
-      // Keep a stable order value for navigation; default to 1
       setOrder(1);
       return;
     }
@@ -97,15 +81,35 @@ export default function TimetablePage() {
     setOrder(clampOrder(numeric, len));
   }, []);
 
+  const refreshData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const timetableData = await fetchTimetable({ forceRefresh: true });
+      if (timetableData && Array.isArray(timetableData)) {
+        setTimeTable(timetableData);
+        const o = await fetchOrder({ forceRefresh: true });
+        const fallback = readStoredOrder();
+        const val = o ?? fallback ?? 1;
+        safeSetOrderFromValue(val, timetableData.length);
+
+        updateCacheTimestamp("timetable");
+      } else {
+        throw new Error("Failed to fetch timetable or invalid data format");
+      }
+    } catch (e) {
+      console.error("Error refreshing timetable:", e);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [safeSetOrderFromValue]);
+
   const initializeData = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
-      const stats = updateCacheStatsMemo();
-
-      // 1) Timetable first (so we know length bounds for order)
       const timetableData = await fetchTimetable({
-        forceRefresh: !stats.exists || stats.isExpired,
+        forceRefresh: true,
       });
 
       if (!timetableData || !Array.isArray(timetableData)) {
@@ -114,11 +118,8 @@ export default function TimetablePage() {
 
       setTimeTable(timetableData);
       updateCacheTimestamp("timetable");
-      updateCacheStatsMemo();
 
-      // 2) Now fetch order and set it safely (await to avoid flicker)
       const fetchedOrder = await fetchOrder({ forceRefresh: false });
-      // If fetchOrder returns null (no data), use last stored or default
       const stored = readStoredOrder();
       const value = fetchedOrder ?? stored ?? 1;
       safeSetOrderFromValue(value, timetableData.length);
@@ -129,13 +130,11 @@ export default function TimetablePage() {
     } finally {
       setLoading(false);
     }
-  }, [updateCacheStatsMemo, safeSetOrderFromValue]);
+    }, [safeSetOrderFromValue]);
 
   useEffect(() => {
     initializeData();
   }, [initializeData]);
-
-  // Avoid a separate fetchOrder here to prevent race/flicker; initializeData awaited it.
 
   useEffect(() => {
     if (currentSlotRef.current) {
@@ -209,7 +208,6 @@ export default function TimetablePage() {
     return <LoadingSkeleton />;
   }
 
-  // Holiday view: show "No classes today" when isHoliday is true
   if (isHoliday) {
     return (
       <div className="flex flex-col items-center justify-center w-full h-[85vh] my-5 gap-4">
@@ -274,49 +272,12 @@ export default function TimetablePage() {
         }
       `}</style>
 
-      <div className="z-40 top-0 left-0 w-full bg-black/70 backdrop-blur-[3px] text-white p-3 shadow-md sm:p-4">
-        <div className="flex items-center justify-between">
-          <span className="flex flex-col text-xs sm:text-base">
-            Data outdated? Click to refresh.
-            <span className="text-green-400 font-bold">
-              Last fetched: {cacheStats?.exists ? cacheStats.timestamp : "-"}
-              {cacheStats?.exists && (cacheStats.expiresIn ?? 0) > 0 && (
-                <span className="ml-1 text-xs">(expires in {cacheStats.expiresIn} min)</span>
-              )}
-            </span>
-          </span>
-          <button
-            onClick={async () => {
-              setLoading(true);
-              try {
-                const timetableData = await fetchTimetable({ forceRefresh: true });
-                if (timetableData && Array.isArray(timetableData)) {
-                  setTimeTable(timetableData);
-                  // Re-fetch order to keep in sync
-                  const o = await fetchOrder({ forceRefresh: true });
-                  const fallback = readStoredOrder();
-                  const val = o ?? fallback ?? 1;
-                  safeSetOrderFromValue(val, timetableData.length);
-
-                  updateCacheTimestamp("timetable");
-                  updateCacheStatsMemo();
-                } else {
-                  throw new Error("Failed to fetch timetable or invalid data format");
-                }
-              } catch (e) {
-                console.error("Error refreshing timetable:", e);
-                setError(true);
-              } finally {
-                setLoading(false);
-              }
-            }}
-            disabled={loading}
-            className="bg-green-400 text-black font-extrabold p-1 rounded-md text-xl sm:py-2 sm:px-4 sm:text-base active:scale-95 transition-all duration-300"
-          >
-            <TbRefresh className={loading ? "animate-spin" : ""} />
-          </button>
-        </div>
-      </div>
+      <RefreshHeader
+        onRefresh={refreshData}
+        loading={loading}
+        zIndex={30}
+        className="w-[95vw] lg:w-[72vw] mx-auto"
+      />
 
       <div className="flex flex-row w-full lg:w-[74vw] justify-between my-2 px-8">
         <div className="flex flex-row gap-4">
@@ -330,9 +291,7 @@ export default function TimetablePage() {
         <Toggle />
       </div>
 
-      {loading ? (
-        <LoadingSkeleton />
-      ) : error ? (
+      {error ? (
         <div className="h-screen w-screen flex items-center justify-center">
           <div className="text-center">
             <p className="text-xl text-red-500 mb-4">Failed to load timetable</p>

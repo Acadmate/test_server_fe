@@ -133,7 +133,7 @@ function MainCal({ data }: CalendarProps) {
   [data, monthName]);
 
   return (
-    <div className="flex flex-col text-white border-box w-[95vw] lg:w-[73vw]">
+    <div className="flex flex-col text-white border-box w-[95vw] lg:w-[73vw] mx-auto">
       {eventsForMonth.length === 0 ? (
         <div className="text-center text-lg">No calendar data available</div>
       ) : (

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Roboto_Flex } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -6,6 +6,7 @@ import { Navbar } from "@/components/shared/navbar";
 import dynamic from "next/dynamic";
 import ServiceWorkerUpdate from "./ServiceWorkerUpdate";
 import { Suspense } from "react";
+import AppLoadingManager from "@/components/shared/AppLoadingManager";
 
 // Load Menu component dynamically with loading fallback
 const Menu = dynamic(() => import("@/components/shared/menu"), {
@@ -62,27 +63,77 @@ const roboto = Roboto_Flex({
   preload: true,
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#1a1a1a" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1a1a" },
+  ],
+};
+
 export const metadata: Metadata = {
   title: "Acadmate",
   description: "Acadmate is your one-stop solution for educational resources, and academic support.",
   keywords: "SRM, SRM academia, academia pro, acadmate SRM, SRM student portal, SRM University, SRM katankulathur, education, learning, academic resources, tutorials, study support",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Acadmate",
+    startupImage: [
+      "/android-chrome-192x192.png",
+    ],
+  },
   openGraph: {
     title: "Acadmate",
     description: "Unlock your academic potential with Acadmate's powerful resources.",
     url: "https://acadmate.in",
     type: "website",
+    siteName: "Acadmate",
   },
   twitter: {
     card: "summary_large_image",
     site: "@acadmate",
+    title: "Acadmate",
+    description: "Your Academic Companion",
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [
+      { url: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
+    ],
     other: [
       {
         rel: "manifest",
         url: "/manifest.json",
+      },
+      {
+        rel: "mask-icon",
+        url: "/android-chrome-192x192.png",
+        color: "#1a1a1a",
+      },
+      // iOS splash screens
+      {
+        rel: "apple-touch-startup-image",
+        url: "/android-chrome-512x512.png",
+        media: "screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)",
+      },
+      {
+        rel: "apple-touch-startup-image", 
+        url: "/android-chrome-512x512.png",
+        media: "screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)",
+      },
+      {
+        rel: "apple-touch-startup-image",
+        url: "/android-chrome-192x192.png", 
+        media: "screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)",
       },
     ],
   },
@@ -97,13 +148,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${roboto.className} antialiased min-h-screen relative`}>
-      <Suspense fallback={null}>
-        <Navbar />
-        <Menu />
-      </Suspense>
-        <SheetSide />
-        <Providers>{children}</Providers>
-        <ServiceWorkerUpdate />
+        <AppLoadingManager>
+          <Suspense fallback={null}>
+            <Navbar />
+            <Menu />
+          </Suspense>
+          <SheetSide />
+          <Providers>{children}</Providers>
+          <ServiceWorkerUpdate />
+        </AppLoadingManager>
       </body>
     </html>
   );

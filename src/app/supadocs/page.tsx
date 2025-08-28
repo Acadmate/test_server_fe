@@ -11,7 +11,6 @@ import { DocumentTree } from "@/components/documents/DocumentTree";
 import { FileViewerComponent } from "@/components/documents/FileViewer";
 import { ContributeDocuments } from "@/components/documents/Contribute";
 
-// Helper function to check if course names match (case-insensitive with normalization)
 function isCourseMatch(courseName: string, subjectName: string): boolean {
   const normalizeText = (text: string): string => {
     return text.toLowerCase().trim().replace(/\s+/g, ' ');
@@ -20,10 +19,8 @@ function isCourseMatch(courseName: string, subjectName: string): boolean {
   const normalizedCourse = normalizeText(courseName);
   const normalizedSubject = normalizeText(subjectName);
   
-  // Direct match
   if (normalizedCourse === normalizedSubject) return true;
   
-  // Check if one contains the other (for partial matches)
   if (normalizedCourse.includes(normalizedSubject) || normalizedSubject.includes(normalizedCourse)) return true;
   
   return false;
@@ -40,7 +37,7 @@ export default function DocumentsPage() {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [subjectDocuments, setSubjectDocuments] = useState<SubjectDocuments | null>(null);
   const [selectedFile, setSelectedFile] = useState<DocumentItem | null>(null);
-  const [loading, setLoading] = useState(true);
+
   const [subjectLoading, setSubjectLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +52,7 @@ export default function DocumentsPage() {
   }, []);
 
   const loadDocumentsTree = async (forceRefresh = false) => {
-    setLoading(true);
+
     setError(null);
     try {
       const data = await fetchDocumentsTree({ forceRefresh });
@@ -67,7 +64,6 @@ export default function DocumentsPage() {
     } catch (error: unknown) {
       console.error("Error loading documents tree:", error);
       
-      // Handle specific authentication errors
       const errorObj = error as { response?: { data?: { message?: string }; status?: number } };
       if (errorObj.response?.data?.message === 'Session expired - please login again') {
         setError("Your session has expired. Please refresh the page or log in again.");
@@ -77,14 +73,13 @@ export default function DocumentsPage() {
         setError("Failed to load documents. Please check your connection and try again.");
       }
     } finally {
-      setLoading(false);
+      
     }
   };
 
   const loadCoursesWithAvailability = async () => {
     setCoursesLoading(true);
     try {
-      // Load both user courses and available subjects
       const [userCourses, subjects] = await Promise.all([
         fetchCourseCodes(),
         getAvailableSubjects()
@@ -92,7 +87,6 @@ export default function DocumentsPage() {
       
       setAvailableSubjects(subjects);
       
-      // Use the new availability checking function
       const coursesWithStatus = checkCourseAvailability(userCourses, subjects);
       
       setCourses(coursesWithStatus);
@@ -117,7 +111,6 @@ export default function DocumentsPage() {
     } catch (error: unknown) {
       console.error("Error loading subject documents:", error);
       
-      // Handle specific authentication errors
       const errorObj = error as { response?: { data?: { message?: string }; status?: number } };
       if (errorObj.response?.data?.message === 'Session expired - please login again') {
         setError("Your session has expired. Please refresh the page or log in again.");
@@ -136,16 +129,13 @@ export default function DocumentsPage() {
     setSubjectDocuments(null);
     setSelectedSubject(null);
     
-    // Close mobile sidebar when selecting a subject
     setIsSidebarOpen(false);
     
-    // Find the matching subject name from the documents API
     const matchingSubject = availableSubjects.find(subject => 
       isCourseMatch(courseTitle, subject)
     );
     
     if (matchingSubject) {
-      // Add a small delay to show loading state
       setTimeout(() => {
         loadSubjectDocuments(matchingSubject);
       }, 100);
@@ -163,8 +153,6 @@ export default function DocumentsPage() {
     setSelectedSubject(null);
     setSubjectDocuments(null);
     setSelectedFile(null);
-    // Only show sidebar on mobile when going back to subjects (not when going back from file viewer)
-    // This prevents the sidebar from opening when just navigating back from a file
   };
 
   const handleBackToDocuments = () => {
@@ -182,34 +170,8 @@ export default function DocumentsPage() {
     course.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Separate courses by availability
   const coursesWithDocuments = filteredCourses.filter(course => course.hasDocuments);
   const coursesWithoutDocuments = filteredCourses.filter(course => !course.hasDocuments);
-
-  if (loading) {
-    return (
-      <div className="h-screen overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 py-8 h-full">
-          <div className="space-y-6 h-full">
-            <div className="space-y-3">
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-96" />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
-              <div className="space-y-4">
-                {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-              <div className="lg:col-span-3">
-                <Skeleton className="h-full w-full" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <DocumentErrorBoundary>

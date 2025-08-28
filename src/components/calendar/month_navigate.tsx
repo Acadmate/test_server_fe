@@ -115,7 +115,7 @@ function MonthNavigate({ availableMonths, calendarData }: MonthNavigateProps) {
   const currentMonthName = availableMonthMap[month as keyof typeof availableMonthMap] || "Loading...";
 
   return (
-    <div className="fixed flex flex-col items-center justify-center bottom-6 w-full z-40">
+    <div className="fixed flex flex-col items-center justify-center bottom-6 w-[95vw] lg:w-[72vw] mx-auto z-40">
       <div className="p-1 gap-1 items-center justify-center flex flex-row bg-gray-100 dark:bg-black/90 w-fit h-fit rounded-xl border border-gray-400 dark:border-gray-700">
         <button
           className="text-3xl border-r border-gray-400 dark:border-gray-700 p-2"

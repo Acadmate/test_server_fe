@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
-import { User, Phone, Mail, GraduationCap, BookOpen, Users, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
-import { fetchUserInfo, clearUserInfoCache } from '@/actions/infoFerch';
+import { User, Phone, Mail, GraduationCap, BookOpen, Users, RefreshCw, AlertTriangle } from 'lucide-react';
+import { fetchUserInfo } from '@/actions/infoFerch';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import RefreshHeader from '@/components/shared/RefreshHeader';
+import { AnimatedCopyButton } from '@/components/ui/AnimatedCopyButton';
 
 export interface UserInfo {
   registrationNumber?: string
@@ -27,28 +28,6 @@ export interface InfoResponse {
   advisors?: Advisor[]
 }
 
-// Skeleton component for loading state
-const PageSkeleton = () => (
-  <div className="p-4 sm:p-6 lg:p-8 space-y-8">
-    <div className="flex justify-between items-center">
-      <Skeleton className="h-9 w-48" />
-      <div className="flex space-x-2">
-        <Skeleton className="h-10 w-32" />
-        <Skeleton className="h-10 w-36" />
-      </div>
-    </div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2 space-y-6">
-        <Skeleton className="h-48 w-full rounded-xl" />
-        <Skeleton className="h-32 w-full rounded-xl" />
-      </div>
-      <div className="lg:col-span-1">
-        <Skeleton className="h-64 w-full rounded-xl" />
-      </div>
-    </div>
-  </div>
-);
-
 export default function UserInfoPage() {
   const [userInfo, setUserInfo] = useState<InfoResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,18 +50,9 @@ export default function UserInfoPage() {
     }
   }, []);
 
-  const handleClearCache = async () => {
-    await clearUserInfoCache();
-    await loadUserInfo(true);
-  };
-
   useEffect(() => {
     loadUserInfo();
   }, [loadUserInfo]);
-
-  if (loading) {
-    return <PageSkeleton />;
-  }
 
   if (error) {
     return (
@@ -102,10 +72,10 @@ export default function UserInfoPage() {
 
   if (!userInfo) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-4">
-            <h2 className="text-2xl font-semibold text-foreground">No user information available.</h2>
-            <p className="text-muted-foreground mt-2">Please try refreshing the data.</p>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-4">
+        <h2 className="text-2xl font-semibold text-foreground">No user information available.</h2>
+        <p className="text-muted-foreground mt-2">Please try refreshing the data.</p>
+      </div>
     );
   }
 
@@ -113,24 +83,13 @@ export default function UserInfoPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-            <h1 className="text-3xl font-bold text-foreground">User Profile</h1>
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={() => loadUserInfo(true)}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </Button>
-              <Button variant="destructive" onClick={handleClearCache}>
-                <Trash2 className="w-4 h-4 mr-2" />
-                Clear Cache
-              </Button>
-            </div>
-          </div>
-        </div>
-
+      <RefreshHeader
+        onRefresh={() => loadUserInfo(true)}
+        loading={loading}
+        zIndex={30}
+        className='w-[95vw] lg:w-[72vw] mx-auto'
+      />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-2">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* User Information Card */}
           <div className="lg:col-span-2">
@@ -167,27 +126,65 @@ export default function UserInfoPage() {
           </div>
 
           {/* Advisors Card */}
-          <div className="lg:col-span-1">
-            <div className="bg-card border rounded-xl shadow-sm p-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="bg-green-400/10 p-2 rounded-full">
-                  <Users className="w-6 h-6 text-green-400" />
-                </div>
-                <h3 className="text-xl font-bold text-foreground">Advisors</h3>
+          <div className="bg-card border rounded-xl shadow-sm p-6">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="bg-green-400/10 p-2 rounded-full">
+                <Users className="w-6 h-6 text-green-400" />
               </div>
+              <h3 className="text-xl font-bold text-foreground">Advisors</h3>
+            </div>
 
-              <div className="space-y-4">
-                {advisors?.map((advisor, index) => (
-                  <div key={index} className="border-l-4 border-green-400 pl-4 py-2">
-                    <h4 className="font-semibold text-foreground">{advisor.name}</h4>
-                    <p className="text-sm text-green-500 font-medium mb-2">{advisor.role}</p>
-                    <div className="space-y-1">
-                      <AdvisorContact icon={Mail} href={`mailto:${advisor.email}`} value={advisor.email} />
-                      <AdvisorContact icon={Phone} href={`tel:${advisor.phone}`} value={advisor.phone} />
+            <div className="space-y-4">
+              {advisors?.map((advisor, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 rounded-lg border border-border bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  {/* Name + Role */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-foreground">{advisor.name}</h4>
+                      <p className="text-xs text-muted-foreground">{advisor.role}</p>
                     </div>
+                    <AnimatedCopyButton 
+                      textToCopy={advisor.name}
+                      className="h-8 w-8"
+                    />
                   </div>
-                ))}
-              </div>
+
+                  {/* Email */}
+                  <div className="flex items-center justify-between mt-3 text-sm">
+                    <a
+                      href={`mailto:${advisor.email}`}
+                      className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Mail className="w-4 h-4" />
+                      {advisor.email}
+                    </a>
+                    <AnimatedCopyButton 
+                      textToCopy={advisor.email}
+                      className="h-8 w-8"
+                    />
+                  </div>
+
+                  {/* Phone */}
+                  <div className="flex items-center justify-between mt-2 text-sm">
+                    <a
+                      href={`tel:${advisor.phone}`}
+                      className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Phone className="w-4 h-4" />
+                      {advisor.phone}
+                    </a>
+                    <AnimatedCopyButton 
+                      textToCopy={advisor.phone}
+                      className="h-8 w-8"
+                    />
+                  </div>
+
+
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -196,7 +193,6 @@ export default function UserInfoPage() {
   );
 }
 
-// Helper components for consistent styling
 const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | number }) => (
   <div className="flex items-center space-x-3">
     <Icon className="w-5 h-5 text-muted-foreground" />
@@ -204,14 +200,5 @@ const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label
       <p className="text-sm text-muted-foreground">{label}</p>
       <p className="font-semibold text-foreground">{value}</p>
     </div>
-  </div>
-);
-
-const AdvisorContact = ({ icon: Icon, href, value }: { icon: React.ElementType, href: string, value: string }) => (
-  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-    <Icon className="w-4 h-4" />
-    <a href={href} className="hover:text-primary transition-colors">
-      {value}
-    </a>
   </div>
 );

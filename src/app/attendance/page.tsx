@@ -2,17 +2,15 @@
 
 import { useState, useEffect, Suspense, lazy } from "react";
 import { useRouter } from "next/navigation";
-import { fetchAttendance, getAttendanceCacheStats } from "@/actions/attendanceFetch";
+import { fetchAttendance } from "@/actions/attendanceFetch";
 import { fetchOrder } from "@/actions/orderFetch";
-import { scroller, Element } from "react-scroll";
-import { TbRefresh } from "react-icons/tb";
+import { Element } from "react-scroll";
+import RefreshHeader from "@/components/shared/RefreshHeader";
 import usePredictedAtt from "@/store/tempAtt";
-import useScrollMrks from "@/store/mrksScroll";
 import usePredictedButton from "@/store/predictButtonState";
 import DashboardMenu from "@/components/shared/dashBoardMenu";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Lazy load components that are not immediately needed
 const Main = lazy(() => import("@/components/attendance/main"));
 const MarkCards = lazy(() => import("@/components/marks/MarkCards"));
 const AttMarkSwitch = lazy(() => import("@/components/attendance/AttMarksSwitch"));
@@ -47,17 +45,8 @@ export default function Attendance() {
   const [dataMarks, setDataMarks] = useState<MarksRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const { setPredictedAtt, predictedAtt } = usePredictedAtt();
-  const { section } = useScrollMrks();
   const { setPredictedButton, predictedButton } = usePredictedButton();
-  const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
   const [courseTitles, setCourseTitles] = useState<Record<string, string>>({});
-
-  type CacheStats = {
-    exists: boolean;
-    isExpired: boolean;
-    timestamp: string;
-    expiresIn: number;
-  };
 
   useEffect(() => {
     const titles = predictedAtt.reduce((acc: Record<string, string>, record) => {
@@ -72,44 +61,15 @@ export default function Attendance() {
     setPredictedButton(0);
   }, [setPredictedButton]);
 
-  useEffect(() => {
-    const isDataLoaded =
-      (section === "marks" && dataMarks.length > 0) ||
-      (section === "attendance" && predictedAtt.length > 0) ||
-      section === "dashboard";
 
-    if (loading || !isDataLoaded) return;
 
-    const sectionId =
-      section === "marks" ? "marks-section" : section === "dashboard" ? "dashboard" : "att-section";
-
-    const timer = setTimeout(() => {
-      scroller.scrollTo(sectionId, { duration: 500, delay: 0, smooth: "easeInOutQuart" });
-    }, 50);
-    return () => clearTimeout(timer);
-  }, [loading, predictedAtt, dataMarks, section]);
-
-  const updateCacheStats = () => {
-    const stats = getAttendanceCacheStats();
-    setCacheStats({
-      exists: stats.exists,
-      timestamp: stats.timestamp || "",
-      isExpired: stats.isExpired || false,
-      expiresIn: stats.expiresIn || 0,
-    });
-    return stats;
-  };
-
-  // Fetch attendance and order data
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Check cache stats first
-        const stats = updateCacheStats();
 
         const attendanceData = await fetchAttendance({
-          forceRefresh: !stats.exists || stats.isExpired,
+          forceRefresh: true,
           updateCache: true
         });
 
@@ -117,7 +77,6 @@ export default function Attendance() {
           setOriginalAttendance(attendanceData.attendance || []);
           setPredictedAtt(attendanceData.attendance || []);
           setDataMarks(attendanceData.marks || []);
-          updateCacheStats();
         }
 
         let orderData
@@ -127,7 +86,6 @@ export default function Attendance() {
         const nowUTC = new Date();
         const currentUTCDate = nowUTC.toUTCString().split(" ")[0];
 
-        // Check if order data needs to be refreshed (different day)
         const lastOrderFetch = localStorage.getItem("order-last-fetch");
         const lastFetchDate = lastOrderFetch ? new Date(parseInt(lastOrderFetch)).toUTCString().split(" ")[0] : null;
 
@@ -151,7 +109,6 @@ export default function Attendance() {
   const refresh = async () => {
     setLoading(true);
     try {
-      // Force a fresh fetch and update the cache
       const attendanceData = await fetchAttendance({
         forceRefresh: true,
         updateCache: true
@@ -159,8 +116,8 @@ export default function Attendance() {
 
       if (attendanceData) {
         setPredictedAtt(attendanceData.attendance || []);
+        setOriginalAttendance(attendanceData.attendance || []); // ✅ Fix: Update original data too
         setDataMarks(attendanceData.marks || []);
-        updateCacheStats();
       }
     } catch (error) {
       console.error("Error fetching attendance:", error);
@@ -179,7 +136,6 @@ export default function Attendance() {
     }
     : {};
 
-  // Detect slow network connection
   const [isSlowConnection, setIsSlowConnection] = useState(false);
   useEffect(() => {
     type NetworkInformation = {
@@ -202,15 +158,12 @@ export default function Attendance() {
     }
   }, []);
 
-  // Fix the displayData logic - it should show predicted data when button is 1
   const [originalAttendance, setOriginalAttendance] = useState<AttendanceRecord[]>([]);
 
-  // This should actually be:
   const displayData = predictedButton === 1 ? predictedAtt : originalAttendance;
 
   return (
-    <div className="flex flex-col gap-2 w-screen lg:w-[73vw] mx-auto">
-      {/* Global styles for blurPulse animation */}
+    <div className="flex flex-col gap-2 w-screen lg:w-[73vw] mx-auto">  
       <style jsx global>{`
         @keyframes blurPulse {
           0% {
@@ -228,29 +181,12 @@ export default function Attendance() {
         }
       `}</style>
 
-      <div className="sticky z-40 top-0 left-0 w-full bg-black/70 backdrop-blur-[3px] text-white p-3 shadow-md sm:p-4">
-        <div className="flex items-center justify-between">
-          <span className="flex flex-col text-xs sm:text-base">
-            Data outdated? Click to refresh.
-            <span className="text-green-400 font-bold">
-              Last fetched:{" "}
-              {cacheStats?.exists ? cacheStats.timestamp : "-"}
-              {cacheStats?.exists && cacheStats.expiresIn > 0 && (
-                <span className="ml-1 text-xs">
-                  (expires in {cacheStats.expiresIn} min)
-                </span>
-              )}
-            </span>
-          </span>
-          <button
-            onClick={async () => await refresh()}
-            disabled={loading}
-            className="bg-green-400 text-black font-extrabold p-1 rounded-md text-xl sm:py-2 sm:px-4 sm:text-base active:scale-95 transition-all duration-300"
-          >
-            <TbRefresh className={loading ? "animate-spin" : ""} />
-          </button>
-        </div>
-      </div>
+      <RefreshHeader
+        onRefresh={refresh}
+        loading={loading}
+        zIndex={30}
+        className="w-[95vw] lg:w-[72vw] mx-auto"
+      />
 
       {isSlowConnection && (
         <div className="bg-yellow-100 text-yellow-800 p-2 text-center text-sm">
