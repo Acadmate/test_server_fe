@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { deleteCookie, getCookie } from './cookies';
+import { handleAuthError } from './auth';
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -22,11 +23,17 @@ export const setupAuthInterceptor = () => {
 
   apiClient.interceptors.response.use(
     (response) => response,
-    (error) => {
-      if (error.response?.status === 401) {
-        clearAuthData();
-        window.location.href = '/login';
+    async (error) => {
+      // Handle authentication errors
+      const authResolved = await handleAuthError(error);
+      
+      if (!authResolved) {
+        // Authentication issue couldn't be resolved, redirect to login
+        return Promise.reject(error);
       }
+      
+      // If auth was resolved (token refreshed), the original request can be retried
+      // We'll let the calling function handle retrying
       return Promise.reject(error);
     }
   );
