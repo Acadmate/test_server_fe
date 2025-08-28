@@ -399,7 +399,7 @@ export async function fetchCourseCodes() {
     
     // Extract course codes and titles from attendance data
     if (attendanceData.attendance && Array.isArray(attendanceData.attendance)) {
-      attendanceData.attendance.forEach((record: any) => {
+      attendanceData.attendance.forEach((record: { "Course Code"?: string; "Course Title"?: string }) => {
         if (record["Course Code"]) {
           // Clean the course code (remove "Regular" suffix if present)
           const cleanCode = record["Course Code"].replace("Regular", "").trim();
@@ -414,7 +414,7 @@ export async function fetchCourseCodes() {
 
     // Extract course codes and titles from marks data
     if (attendanceData.marks && Array.isArray(attendanceData.marks)) {
-      attendanceData.marks.forEach((record: any) => {
+      attendanceData.marks.forEach((record: { "Course Code"?: string; "Course Title"?: string }) => {
         if (record["Course Code"]) {
           const cleanCode = record["Course Code"].replace("Regular", "").trim();
           if (cleanCode) {

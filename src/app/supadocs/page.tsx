@@ -1,11 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-import { fetchDocumentsTree, fetchSubjectDocuments, clearDocumentsCache, fetchCourseCodes, getAvailableSubjects, checkCourseAvailability } from "@/actions/documentFetch";
+import { fetchDocumentsTree, fetchSubjectDocuments, fetchCourseCodes, getAvailableSubjects, checkCourseAvailability } from "@/actions/documentFetch";
 import { DocumentItem, DocumentsTree, SubjectDocuments } from "@/actions/documentFetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Folder, RefreshCw, Search, ChevronLeft, File, Calendar, BookOpen, CheckCircle, XCircle } from "lucide-react";
+import { Folder, RefreshCw, Search, ChevronLeft, File, Calendar, BookOpen, CheckCircle, XCircle, Menu, X } from "lucide-react";
 import { DocumentErrorBoundary } from "@/components/documents/DocumentErrorBoundary";
 import { DocumentTree } from "@/components/documents/DocumentTree";
 import { FileViewerComponent } from "@/components/documents/FileViewer";
@@ -47,6 +47,7 @@ export default function DocumentsPage() {
   const [courses, setCourses] = useState<CourseInfo[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(false);
   const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     loadDocumentsTree();
@@ -63,13 +64,14 @@ export default function DocumentsPage() {
       } else {
         setError("Failed to load documents. Please try again.");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error loading documents tree:", error);
       
       // Handle specific authentication errors
-      if (error.response?.data?.message === 'Session expired - please login again') {
+      const errorObj = error as { response?: { data?: { message?: string }; status?: number } };
+      if (errorObj.response?.data?.message === 'Session expired - please login again') {
         setError("Your session has expired. Please refresh the page or log in again.");
-      } else if (error.response?.status === 401 || error.response?.status === 403) {
+      } else if (errorObj.response?.status === 401 || errorObj.response?.status === 403) {
         setError("Authentication failed. Please log in again.");
       } else {
         setError("Failed to load documents. Please check your connection and try again.");
@@ -112,13 +114,14 @@ export default function DocumentsPage() {
       } else {
         setError(`Failed to load documents for ${subjectName}. Please try again.`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error loading subject documents:", error);
       
       // Handle specific authentication errors
-      if (error.response?.data?.message === 'Session expired - please login again') {
+      const errorObj = error as { response?: { data?: { message?: string }; status?: number } };
+      if (errorObj.response?.data?.message === 'Session expired - please login again') {
         setError("Your session has expired. Please refresh the page or log in again.");
-      } else if (error.response?.status === 401 || error.response?.status === 403) {
+      } else if (errorObj.response?.status === 401 || errorObj.response?.status === 403) {
         setError("Authentication failed. Please log in again.");
       } else {
         setError(`Failed to load documents for ${subjectName}. Please try again.`);
@@ -132,6 +135,9 @@ export default function DocumentsPage() {
     setSelectedFile(null);
     setSubjectDocuments(null);
     setSelectedSubject(null);
+    
+    // Close mobile sidebar when selecting a subject
+    setIsSidebarOpen(false);
     
     // Find the matching subject name from the documents API
     const matchingSubject = availableSubjects.find(subject => 
@@ -157,20 +163,15 @@ export default function DocumentsPage() {
     setSelectedSubject(null);
     setSubjectDocuments(null);
     setSelectedFile(null);
+    // Only show sidebar on mobile when going back to subjects (not when going back from file viewer)
+    // This prevents the sidebar from opening when just navigating back from a file
   };
 
   const handleBackToDocuments = () => {
     setSelectedFile(null);
   };
 
-  const clearCache = async () => {
-    await clearDocumentsCache();
-    setDocumentsTree(null);
-    setSubjectDocuments(null);
-    setSelectedSubject(null);
-    setSelectedFile(null);
-    loadDocumentsTree(true);
-  };
+
 
   const filteredSubjects = documentsTree?.tree.filter(subject =>
     subject.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -256,21 +257,33 @@ export default function DocumentsPage() {
         }
       `}</style>
       
-      <div className="h-screen overflow-hidden">
-        <div className="w-full mx-auto px-4 py-8 h-full flex flex-col">
+      <div className="lg:h-screen h-full min-h-screen overflow-hidden">
+        <div className="w-full mx-auto px-4 py-4 h-full flex flex-col">
           {/* Header */}
           <header className="mb-3 flex-shrink-0">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Documents
-                </h1>
-                {documentsTree?.lastUpdated && (
-                  <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    Updated {new Date(documentsTree.lastUpdated).toLocaleDateString()}
-                  </div>
-                )}
+              <div className="flex items-center gap-3">
+                {/* Mobile sidebar toggle */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  className="lg:hidden h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  <Menu className="w-4 h-4" />
+                </Button>
+                
+                <div>
+                  <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    Documents
+                  </h1>
+                  {documentsTree?.lastUpdated && (
+                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                      <Calendar className="w-3 h-3 mr-1" />
+                      Updated {new Date(documentsTree.lastUpdated).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
               </div>
               
               <Button
@@ -313,8 +326,8 @@ export default function DocumentsPage() {
 
           {/* File Viewer */}
           {selectedFile ? (
-            <div className="flex-1 overflow-hidden">
-              <div className="space-y-4 h-full">
+            <div className="flex-1 overflow-hidden h-full flex flex-col">
+              <div className="flex-shrink-0 mb-4">
                 <div className="flex items-center gap-3">
                   <Button
                     variant="outline"
@@ -325,24 +338,48 @@ export default function DocumentsPage() {
                     <ChevronLeft className="w-4 h-4 mr-1" />
                     Back to Documents
                   </Button>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
                     {selectedSubject} / {selectedFile.name}
                   </div>
                 </div>
-                <div className="h-full">
-                  <FileViewerComponent file={selectedFile} onClose={handleBackToDocuments} />
-                </div>
+              </div>
+              <div className="flex-1 overflow-hidden min-h-0">
+                <FileViewerComponent file={selectedFile} onClose={handleBackToDocuments} />
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-6 gap-3 flex-1 overflow-hidden">
+            <div className="flex lg:flex-row flex-col-reverse gap-3 flex-1 overflow-hidden h-full relative">
+              {/* Mobile Sidebar Overlay */}
+              {isSidebarOpen && (
+                <div 
+                  className="lg:hidden fixed inset-0 bg-black/50 z-40"
+                  onClick={() => setIsSidebarOpen(false)}
+                />
+              )}
+              
               {/* Sidebar - Subjects */}
-              <aside className="lg:col-span-2 flex flex-col overflow-hidden">
-                <div className="bg-white dark:bg-[#0F0F0F] rounded-lg border border-gray-200 dark:border-[#151515] overflow-hidden flex flex-col h-full">
+              <aside className={`
+                lg:w-1/3 lg:relative lg:translate-x-0 lg:z-auto
+                fixed left-0 top-0 w-80 h-full z-50 transition-transform duration-300 ease-in-out
+                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+                lg:h-full flex flex-col overflow-hidden
+              `}>
+                <div className="bg-white dark:bg-[#0F0F0F] rounded-lg border border-gray-200 dark:border-[#151515] overflow-hidden flex flex-col h-full lg:rounded-lg rounded-none lg:border border-0 lg:border-gray-200 lg:dark:border-[#151515]">
                   <div className="p-4 border-b border-gray-200 dark:border-[#151515] flex-shrink-0">
-                    <h2 className="font-medium text-gray-900 dark:text-white mb-3">
-                      Subjects
-                    </h2>
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="font-medium text-gray-900 dark:text-white">
+                        Subjects
+                      </h2>
+                      {/* Mobile close button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsSidebarOpen(false)}
+                        className="lg:hidden h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <Input
@@ -383,9 +420,9 @@ export default function DocumentsPage() {
               </aside>
 
               {/* Main Content */}
-              <main className="lg:col-span-4 flex flex-col overflow-hidden gap-3">
+              <main className="lg:w-2/3 flex flex-col overflow-hidden gap-3 h-full min-h-64">
                 {selectedSubject ? (
-                  <div className="bg-white dark:bg-[#0F0F0F] rounded-lg border border-gray-200 dark:border-[#151515] flex flex-col h-full overflow-hidden">
+                  <div className="bg-white dark:bg-[#0F0F0F] min-h-64 flex-1 rounded-lg border border-gray-200 dark:border-[#151515] flex flex-col overflow-hidden">
                     <div className="p-4 border-b border-gray-200 dark:border-[#151515] flex-shrink-0">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -439,7 +476,7 @@ export default function DocumentsPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white dark:bg-[#0F0F0F] rounded-lg border border-gray-200 dark:border-[#151515] p-6 overflow-y-auto thin-scrollbar">
+                  <div className="bg-white dark:bg-[#0F0F0F] min-h-64 flex-1 rounded-lg border border-gray-200 dark:border-[#151515] p-6 overflow-y-auto thin-scrollbar">
                     <div className="mb-6">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                         Your Courses

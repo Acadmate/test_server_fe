@@ -70,8 +70,9 @@ export async function isTokenValid(): Promise<boolean> {
     });
     
     return true;
-  } catch (error: any) {
-    if (error.response?.data?.message === 'Session expired - please login again') {
+  } catch (error: unknown) {
+    const errorObj = error as { response?: { data?: { message?: string } } };
+    if (errorObj.response?.data?.message === 'Session expired - please login again') {
       return false;
     }
     // For other errors, assume token is valid (network issues, etc.)
@@ -84,9 +85,10 @@ export async function isTokenValid(): Promise<boolean> {
  * @param error - The error response from the API
  * @returns Promise<boolean> - true if authentication issue resolved, false if login required
  */
-export async function handleAuthError(error: any): Promise<boolean> {
+export async function handleAuthError(error: unknown): Promise<boolean> {
   // Check if it's a session expired error
-  if (error.response?.data?.message === 'Session expired - please login again') {
+  const errorObj = error as { response?: { data?: { message?: string } } };
+  if (errorObj.response?.data?.message === 'Session expired - please login again') {
     console.log('Session expired, attempting token refresh...');
     
     // Try to refresh the token
@@ -104,7 +106,8 @@ export async function handleAuthError(error: any): Promise<boolean> {
   }
   
   // For other authentication errors (401, 403), redirect to login
-  if (error.response?.status === 401 || error.response?.status === 403) {
+  const errorObj2 = error as { response?: { data?: { message?: string }; status?: number } };
+  if (errorObj2.response?.status === 401 || errorObj2.response?.status === 403) {
     console.log('Authentication error, redirecting to login...');
     clearAuthData();
     return false; // Login required

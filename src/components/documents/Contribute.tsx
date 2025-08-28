@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, MessageCircle, Users, X, ArrowRight, FileText } from "lucide-react";
+import { Upload, MessageCircle, Users, X, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";    
 
 export function ContributeDocuments() {
@@ -9,7 +9,7 @@ export function ContributeDocuments() {
   if (isDismissed) return null;
 
   return (
-    <div className="bg-gradient-to-r  dark:bg-[#0F0F0F] border rounded-lg p-4 mb-6">
+    <div className="bg-gradient-to-r  dark:bg-[#0F0F0F] border rounded-lg p-4">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3 flex-1">
           <div className="bg-blue-100 dark:bg-blue-900/30 rounded-full p-2 flex-shrink-0">

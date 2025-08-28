@@ -194,7 +194,7 @@ const nextConfig = {
 
   images: {
     minimumCacheTTL: 60,
-    domains: [],
+    domains: ['d1q2pjcdrkfe73.cloudfront.net'],
   },
   experimental: {
     optimizeCss: true,

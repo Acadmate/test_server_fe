@@ -8,8 +8,7 @@ import {
   FileText, 
   Image as ImageIcon, 
   File,
-  Calendar,
-  HardDrive
+  Calendar
 } from "lucide-react";
 
 interface DocumentTreeProps {
@@ -56,20 +55,7 @@ export function DocumentTree({ items, onFileClick, level = 0 }: DocumentTreeProp
     }
   };
 
-  const formatFileSize = (bytes: number | undefined) => {
-    if (!bytes) return '';
-    
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let size = bytes;
-    let unitIndex = 0;
-    
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
-    
-    return `${size.toFixed(1)} ${units[unitIndex]}`;
-  };
+
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return '';
@@ -99,7 +85,7 @@ export function DocumentTree({ items, onFileClick, level = 0 }: DocumentTreeProp
 
   return (
     <div className="space-y-1">
-      {sortItems(items).map((item, index) => {
+      {sortItems(items).map((item) => {
         const isExpanded = expandedFolders.has(item.name);
         const hasChildren = item.children && item.children.length > 0;
         const indentLevel = level * 16;

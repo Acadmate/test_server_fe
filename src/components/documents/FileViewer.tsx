@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { DocumentItem } from "@/actions/documentFetch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import Image from "next/image";
 import {
   Download,
   ExternalLink,
@@ -90,8 +90,7 @@ export function FileViewerComponent({ file, onClose }: FileViewerProps) {
 
   // Office Apps Live viewer for PowerPoint
   const getOfficeViewerUrl = useCallback((url: string) => {
-    const encodedUrl = encodeURIComponent(url);
-    return `https://view.officeapps.live.com/op/embed.aspx?src=${encodedUrl}`;
+    return `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
   }, []);
 
   const handleDownload = async () => {
@@ -324,11 +323,13 @@ export function FileViewerComponent({ file, onClose }: FileViewerProps) {
           </div>
         )}
 
-        <div className="h-full w-full">
+        <div className="h-full w-full min-h-0 flex-1">
           {fileType === "image" && (
             <div className="w-full h-full flex items-center justify-center p-4">
-              <img
+              <Image
                 src={file.url}
+                width={1000}
+                height={1000}
                 alt={file.name}
                 className="max-w-full max-h-full object-contain shadow-lg rounded-lg transition-all duration-300"
                 style={{
@@ -343,7 +344,7 @@ export function FileViewerComponent({ file, onClose }: FileViewerProps) {
           {fileType === "pdf" && (
             <iframe
               src={getGoogleViewerUrl(file.url, 'pdf')}
-              className="w-full h-full border-0"
+              className="w-full h-full border-0 min-h-[70vh]"
               title={file.name}
               onLoad={handleLoad}
               onError={handleError}
@@ -353,7 +354,7 @@ export function FileViewerComponent({ file, onClose }: FileViewerProps) {
           {fileType === "presentation" && (
             <iframe
               src={getOfficeViewerUrl(file.url)}
-              className="w-full h-full border-0"
+              className="w-full h-full border-0 min-h-[70vh]"
               title={file.name}
               onLoad={handleLoad}
               onError={handleError}
@@ -363,7 +364,7 @@ export function FileViewerComponent({ file, onClose }: FileViewerProps) {
           {fileType === "document" && (
             <iframe
               src={getGoogleViewerUrl(file.url, 'document')}
-              className="w-full h-full border-0"
+              className="w-full h-full border-0 min-h-[70vh]"
               title={file.name}
               onLoad={handleLoad}
               onError={handleError}
