@@ -194,7 +194,12 @@ const nextConfig = {
 
   images: {
     minimumCacheTTL: 60,
-    domains: ['d1q2pjcdrkfe73.cloudfront.net'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'd1q2pjcdrkfe73.cloudfront.net',
+      },
+    ],
   },
   experimental: {
     optimizeCss: true,

@@ -61,8 +61,6 @@ export default function Attendance() {
     setPredictedButton(0);
   }, [setPredictedButton]);
 
-
-
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);

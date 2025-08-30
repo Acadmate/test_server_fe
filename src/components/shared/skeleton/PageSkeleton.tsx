@@ -176,7 +176,7 @@ const CalendarSkeleton = ({ count = 5 }: { count?: number }) => {
 
 function TableSkeleton() {
     return (
-        <div className="relative h-[80vh] flex justify-center mx-4 w-[95vw] lg:w-[72vw]">
+        <div className="relative h-[80vh] flex justify-center m-auto w-[95vw] lg:w-[72vw]">
             <div className="flex flex-col gap-2 w-full lg:block hidden">
                 <Skeleton className="h-8 w-40" />
                 <div className="flex flex-row justify-between gap-2 mt-2">

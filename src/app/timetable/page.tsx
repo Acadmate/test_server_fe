@@ -7,7 +7,7 @@ import { IoCaretForwardCircle, IoCaretBackCircleSharp } from "react-icons/io5";
 import RefreshHeader from "@/components/shared/RefreshHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentTimeSlot } from "../../components/hooks/useCurrentTimeSlot";
-import { LoadingSkeleton } from "../../components/timetable/loadingSkilition";
+import PageSkeleton from "@/components/shared/skeleton/PageSkeleton";
 import { updateCacheTimestamp } from "../../components/utils/cacheUtils";
 
 const Toggle = dynamic(() => import("../../components/shared/switchTheme"), { ssr: false });
@@ -189,15 +189,6 @@ export default function TimetablePage() {
     }, 100);
   }, [captureAsPDF]);
 
-  const blurPulseStyle = loading
-    ? {
-        animation: "blurPulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1)",
-        filter: "blur(0.5px)",
-        opacity: 0.8,
-        willChange: "filter, opacity",
-      }
-    : {};
-
   const currentDayTimetable = useMemo(() => {
     if (!timeTable || timeTable.length === 0) return null;
     const idx = orderToIndex(order, timeTable.length); // Safe and 0-based
@@ -205,7 +196,7 @@ export default function TimetablePage() {
   }, [timeTable, order]);
 
   if (!isClient) {
-    return <LoadingSkeleton />;
+    return <PageSkeleton type="table" />;
   }
 
   if (isHoliday) {
@@ -255,23 +246,6 @@ export default function TimetablePage() {
 
   return (
     <div className="flex flex-col justify-center items-center mx-auto h-fit w-screen lg:w-[73vw]">
-      <style jsx global>{`
-        @keyframes blurPulse {
-          0% {
-            filter: blur(0.5px);
-            opacity: 0.5;
-          }
-          50% {
-            filter: blur(2px);
-            opacity: 0.7;
-          }
-          100% {
-            filter: blur(0.5px);
-            opacity: 0.5;
-          }
-        }
-      `}</style>
-
       <RefreshHeader
         onRefresh={refreshData}
         loading={loading}
@@ -291,7 +265,11 @@ export default function TimetablePage() {
         <Toggle />
       </div>
 
-      {error ? (
+      {loading ? (
+        <div className="w-full px-2">
+          <PageSkeleton type="table" showHeader={false} />
+        </div>
+      ) : error ? (
         <div className="h-screen w-screen flex items-center justify-center">
           <div className="text-center">
             <p className="text-xl text-red-500 mb-4">Failed to load timetable</p>
@@ -306,7 +284,7 @@ export default function TimetablePage() {
       ) : (
         <>
           {/* Mobile View */}
-          <div className="w-full border-box px-2 h-[150vh] lg:hidden" style={blurPulseStyle}>
+          <div className="w-full border-box px-2 h-[150vh] lg:hidden">
             {currentDayTimetable ? (
               <div className="flex flex-col gap-1 justify-center">
                 <div className="flex flex-row justify-between items-center">
@@ -354,7 +332,7 @@ export default function TimetablePage() {
           </div>
 
           {/* Desktop View */}
-          <div ref={captureRef} className="hidden lg:flex flex-col" style={blurPulseStyle}>
+          <div ref={captureRef} className="hidden lg:flex flex-col">
             {currentDayTimetable && timeTable.length > 0 ? (
               <div className="flex flex-col">
                 <div className="flex flex-row justify-end gap-[15px]">

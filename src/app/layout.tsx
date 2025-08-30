@@ -56,11 +56,13 @@ const SheetSide = dynamic(() => import("@/components/shared/sheetNav").then(mod 
   ),
 });
 
-// Optimize font loading
+// Optimize font loading with fallback
 const roboto = Roboto_Flex({
   subsets: ["latin"],
   weight: "500",
   preload: true,
+  display: 'swap',
+  fallback: ['system-ui', 'arial'],
 });
 
 export const viewport: Viewport = {
