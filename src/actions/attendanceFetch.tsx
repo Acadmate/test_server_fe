@@ -5,7 +5,6 @@ import { fetchTimetable } from "./timetableFetch";
 import { fetchCalender } from "./calendarFetch";
 
 /**
- * Fetches attendance data with advanced caching options
  * @param {Object} options - Fetch options
  * @param {boolean} options.forceRefresh - Whether to bypass cache and force a fresh fetch
  * @param {boolean} options.updateCache - Whether to update the cache with new data
@@ -15,9 +14,13 @@ import { fetchCalender } from "./calendarFetch";
 export async function fetchAttendance({
   forceRefresh = false,
   updateCache = true,
-  cacheExpiry = 4 * 60 * 60 * 1000 // 4h
+  cacheExpiry = 4 * 60 * 60 * 1000, // 4h
 } = {}) {
-  console.log(`fetchAttendance: ${forceRefresh ? 'Forcing refresh' : 'Using cache if available'}`);
+  console.log(
+    `fetchAttendance: ${
+      forceRefresh ? "Forcing refresh" : "Using cache if available"
+    }`
+  );
   const api_url = process.env.NEXT_PUBLIC_API_URL;
   const CACHE_NAME = "attendance-cache";
   const CACHE_KEY = "/attendance";
@@ -33,14 +36,17 @@ export async function fetchAttendance({
     }
   };
 
-  const updateCacheMetadata = (data: { attendance: string | unknown[]; marks: string | unknown[]; }) => {
+  const updateCacheMetadata = (data: {
+    attendance: string | unknown[];
+    marks: string | unknown[];
+  }) => {
     try {
       const timestamp = Date.now();
       const metadata = {
         timestamp,
         expiresAt: timestamp + cacheExpiry,
         recordCount: data.attendance?.length || 0,
-        marksCount: data.marks?.length || 0
+        marksCount: data.marks?.length || 0,
       };
       localStorage.setItem(CACHE_METADATA_KEY, JSON.stringify(metadata));
       return metadata;
@@ -65,7 +71,7 @@ export async function fetchAttendance({
           const data = await cachedResponse.json();
           console.log("Serving from cache:", {
             recordCount: data.attendance?.length || 0,
-            marksCount: data.marks?.length || 0
+            marksCount: data.marks?.length || 0,
           });
           return data;
         }
@@ -74,34 +80,30 @@ export async function fetchAttendance({
       }
     } catch (error) {
       console.error("Error reading from cache:", error);
-
     }
   }
 
   try {
     console.log("Fetching from API");
-    const response = await apiClient.get(
-      `${api_url}/attendance`,
-      {
-        headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate",
-          "Pragma": "no-cache",
-        },
-        withCredentials: true,
-      }
-    );
+    const response = await apiClient.get(`${api_url}/attendance`, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        Pragma: "no-cache",
+      },
+      withCredentials: true,
+    });
 
     const data = response.data.data;
-    console.log(data)
+    console.log(data);
 
     if (updateCache && "caches" in window && data) {
       try {
         const cache = await caches.open(CACHE_NAME);
         const responseToCache = new Response(JSON.stringify(data), {
           headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': `max-age=${cacheExpiry / 1000}`
-          }
+            "Content-Type": "application/json",
+            "Cache-Control": `max-age=${cacheExpiry / 1000}`,
+          },
         });
         await cache.put(CACHE_KEY, responseToCache);
         updateCacheMetadata(data);
@@ -112,9 +114,9 @@ export async function fetchAttendance({
     }
 
     setTimeout(async () => {
-      await fetchTimetable()
-      await fetchCalender()
-      await fetchOrder()
+      await fetchTimetable();
+      await fetchCalender();
+      await fetchOrder();
     }, 0);
 
     return data;
@@ -157,8 +159,7 @@ export async function clearAttendanceCache() {
 }
 
 /**
- * Gets cache statistics
- * @returns {Object} Cache statistics
+ * @returns {Object}
  */
 export function getAttendanceCacheStats() {
   const metadata = localStorage.getItem("attendance-metadata");
@@ -171,8 +172,11 @@ export function getAttendanceCacheStats() {
     exists: true,
     timestamp: new Date(parsedMetadata.timestamp).toLocaleString(),
     isExpired: now > parsedMetadata.expiresAt,
-    expiresIn: Math.max(0, Math.floor((parsedMetadata.expiresAt - now) / 1000 / 60)), // minutes
+    expiresIn: Math.max(
+      0,
+      Math.floor((parsedMetadata.expiresAt - now) / 1000 / 60)
+    ),
     recordCount: parsedMetadata.recordCount,
-    marksCount: parsedMetadata.marksCount
+    marksCount: parsedMetadata.marksCount,
   };
 }
