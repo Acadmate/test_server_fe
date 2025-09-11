@@ -9,6 +9,7 @@ import { Suspense } from "react";
 import AppLoadingManager from "@/components/shared/AppLoadingManager";
 import AuthGuard from "@/components/auth/AuthGuard";
 import SimpleSessionManager from "@/components/auth/SimpleSessionManager";
+import PWAInstallPrompt from "@/components/shared/PWAInstallPrompt";
 
 // Load Menu component dynamically with loading fallback
 const Menu = dynamic(() => import("@/components/shared/menu"), {
@@ -176,6 +177,7 @@ export default function RootLayout({
               <SheetSide />
               <Providers>{children}</Providers>
               <ServiceWorkerUpdate />
+              <PWAInstallPrompt />
             </AppLoadingManager>
           </SimpleSessionManager>
         </AuthGuard>
