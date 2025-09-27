@@ -1,31 +1,21 @@
 const withPWA = require("next-pwa")({
   dest: "public",
   register: true,
-  skipWaiting: true,
+  skipWaiting: true, // Changed from false - allows immediate updates
   cacheOnFrontEndNav: true,
   disable: process.env.NODE_ENV === "development",
+
+  // Enable automatic cleanup of outdated caches
+  cleanupOutdatedCaches: true,
+
   buildExcludes: [
-    // Exclude just map files
-    /\.map$/,
-  ],
-  publicExcludes: [
-    // Exclude manifest files from being copied to public
-    "!manifest.json",
-    "!manifest.webmanifest",
+    /app-build-manifest\.json$/,
+    /middleware-manifest\.json$/,
+    /build-manifest\.json$/,
   ],
 
-  // Use version-based revision for better cache busting
-  additionalManifestEntries: [
-    { url: "/", revision: "2.0.0" },
-    { url: "/calender", revision: "2.0.0" },
-    { url: "/messmenu", revision: "2.0.0" },
-    { url: "/timetable", revision: "2.0.0" },
-    { url: "/attendance", revision: "2.0.0" },
-    { url: "/gpacalc", revision: "2.0.0" },
-    { url: "/supadocs", revision: "2.0.0" },
-    { url: "/info", revision: "2.0.0" },
-    { url: "/offline.html", revision: "2.0.0" },
-  ],
+  // Remove static additionalManifestEntries - these cause stale cache issues
+  // Let Workbox handle precaching automatically
 
   runtimeCaching: [
     // Navigation requests - use NetworkFirst for better offline experience
@@ -35,13 +25,11 @@ const withPWA = require("next-pwa")({
       options: {
         cacheName: "pages",
         expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 86400 * 7, // 7 days
+          maxEntries: 50, // Reduced from 100
+          maxAgeSeconds: 86400 * 3, // Reduced from 7 days to 3 days
         },
-        networkTimeoutSeconds: 3, // Fall back to cache if network takes more than 3 seconds
-        precacheFallback: {
-          fallbackURL: "/offline.html",
-        },
+        networkTimeoutSeconds: 3,
+        // Remove precacheFallback - it can cause conflicts
       },
     },
 
@@ -52,26 +40,28 @@ const withPWA = require("next-pwa")({
       options: {
         cacheName: "page-data",
         expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 86400, // 1 day
+          maxEntries: 50, // Reduced
+          maxAgeSeconds: 3600 * 12, // Reduced from 1 day to 12 hours
         },
+        networkTimeoutSeconds: 2, // Added timeout
       },
     },
 
-    // Static assets - use StaleWhileRevalidate for better update detection
+    // Static assets - CRITICAL FIX: Use NetworkFirst instead of StaleWhileRevalidate
     {
       urlPattern: /\.(?:js|css)$/,
-      handler: "StaleWhileRevalidate",
+      handler: "NetworkFirst", // Changed from StaleWhileRevalidate
       options: {
         cacheName: "static-resources",
         expiration: {
           maxEntries: 100,
-          maxAgeSeconds: 86400 * 7, // 7 days - shorter cache for better updates
+          maxAgeSeconds: 86400 * 1, // Reduced from 7 days to 1 day
         },
+        networkTimeoutSeconds: 3, // Added timeout
       },
     },
 
-    // Fonts
+    // Fonts - keep CacheFirst as these rarely change
     {
       urlPattern: /\.(?:woff2?|eot|ttf|otf)$/,
       handler: "CacheFirst",
@@ -79,12 +69,12 @@ const withPWA = require("next-pwa")({
         cacheName: "font-resources",
         expiration: {
           maxEntries: 20,
-          maxAgeSeconds: 86400 * 30, // 30 days
+          maxAgeSeconds: 86400 * 30,
         },
       },
     },
 
-    // Images
+    // Images - keep CacheFirst as these rarely change
     {
       urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
       handler: "CacheFirst",
@@ -92,12 +82,12 @@ const withPWA = require("next-pwa")({
         cacheName: "images",
         expiration: {
           maxEntries: 100,
-          maxAgeSeconds: 86400 * 30, // 30 days
+          maxAgeSeconds: 86400 * 30,
         },
       },
     },
 
-    // API routes - use NetworkFirst with offline fallback
+    // API routes
     {
       urlPattern: ({ url }) => url.pathname.startsWith("/api/"),
       handler: "NetworkFirst",
@@ -105,9 +95,49 @@ const withPWA = require("next-pwa")({
         cacheName: "api-cache",
         expiration: {
           maxEntries: 50,
-          maxAgeSeconds: 3600, // 1 hour
+          maxAgeSeconds: 1800, // Reduced from 1 hour to 30 minutes
         },
         networkTimeoutSeconds: 5,
+      },
+    },
+
+    // CRITICAL FIX: Next.js chunks and static files
+    {
+      urlPattern: ({ url }) => {
+        return (
+          url.pathname.startsWith("/_next/static/chunks/") ||
+          url.pathname.startsWith("/_next/static/css/")
+        );
+      },
+      handler: "NetworkFirst", // Changed from StaleWhileRevalidate
+      options: {
+        cacheName: "next-chunks",
+        expiration: {
+          maxEntries: 200,
+          maxAgeSeconds: 86400 * 1, // Reduced to 1 day
+        },
+        networkTimeoutSeconds: 3,
+      },
+    },
+
+    // Other Next.js assets
+    {
+      urlPattern: ({ url }) => {
+        return (
+          url.pathname.startsWith("/_next/") &&
+          !url.pathname.startsWith("/_next/static/chunks/") &&
+          !url.pathname.startsWith("/_next/static/css/") &&
+          !url.pathname.includes("/data/")
+        );
+      },
+      handler: "NetworkFirst",
+      options: {
+        cacheName: "next-other",
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 86400 * 1,
+        },
+        networkTimeoutSeconds: 3,
       },
     },
 
@@ -126,39 +156,42 @@ const withPWA = require("next-pwa")({
         cacheName: "other-resources",
         expiration: {
           maxEntries: 50,
-          maxAgeSeconds: 86400 * 7, // 7 days
+          maxAgeSeconds: 86400 * 1, // Reduced to 1 day
         },
         networkTimeoutSeconds: 3,
-      },
-    },
-
-    // Next.js specific assets - use StaleWhileRevalidate for better updates
-    {
-      urlPattern: ({ url }) => {
-        return (
-          url.pathname.startsWith("/_next/") &&
-          !url.pathname.includes("/data/") &&
-          !url.pathname.includes(".json")
-        );
-      },
-      handler: "StaleWhileRevalidate",
-      options: {
-        cacheName: "next-static",
-        expiration: {
-          maxEntries: 200,
-          maxAgeSeconds: 86400 * 7, // 7 days - shorter cache for better updates
-        },
       },
     },
   ],
 });
 
-// Update handling is now managed by the React components
-
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   pageExtensions: ["tsx", "ts", "jsx", "js"],
+
+  // Add generateBuildId for better cache invalidation
+  generateBuildId: async () => {
+    return (
+      process.env.VERCEL_GIT_COMMIT_SHA ||
+      process.env.GIT_COMMIT_SHA ||
+      `build-${Date.now()}`
+    );
+  },
+
+  // Add proper cache headers
+  async headers() {
+    return [
+      {
+        source: "/_next/static/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=86400", // 1 day cache
+          },
+        ],
+      },
+    ];
+  },
 
   images: {
     minimumCacheTTL: 60,

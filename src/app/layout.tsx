@@ -4,7 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { Navbar } from "@/components/shared/navbar";
 import dynamic from "next/dynamic";
-import ServiceWorkerInit from "@/components/shared/ServiceWorkerInit";
+// import ServiceWorkerInit from "@/components/shared/ServiceWorkerInit";
 import { Suspense } from "react";
 import AppLoadingManager from "@/components/shared/AppLoadingManager";
 import PWAInstallPrompt from "@/components/shared/PWAInstallPrompt";
@@ -172,7 +172,7 @@ export default function RootLayout({
           </Suspense>
           <SheetSide />
           <Providers>{children}</Providers>
-          <ServiceWorkerInit />
+          {/* <ServiceWorkerInit /> */}
           <PWAInstallPrompt />
         </AppLoadingManager>
       </body>
