@@ -4,12 +4,12 @@ import { useState, useEffect, Suspense, lazy } from "react";
 import { useRouter } from "next/navigation";
 import { fetchAttendance } from "@/actions/attendanceFetch";
 import { fetchOrder } from "@/actions/orderFetch";
-import { Element } from "react-scroll";
 import RefreshHeader from "@/components/shared/RefreshHeader";
 import usePredictedAtt from "@/store/tempAtt";
 import usePredictedButton from "@/store/predictButtonState";
 import DashboardMenu from "@/components/shared/dashBoardMenu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Element } from "react-scroll";
 import {
   formatLastFetchedText,
   setLastFetchedTime,
@@ -99,8 +99,6 @@ type AttendanceRecord = {
 
 export default function Attendance() {
   const router = useRouter();
-
-  // Data states
   const [dataMarks, setDataMarks] = useState<MarksRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [attendanceLoading, setAttendanceLoading] = useState(true);
@@ -109,12 +107,10 @@ export default function Attendance() {
   >([]);
   const [isSlowConnection, setIsSlowConnection] = useState(false);
 
-  // Store states
   const { setPredictedAtt, predictedAtt } = usePredictedAtt();
   const { setPredictedButton, predictedButton } = usePredictedButton();
   const [courseTitles, setCourseTitles] = useState<Record<string, string>>({});
 
-  // Only run effects after component mounts
   useEffect(() => {
     const titles = predictedAtt.reduce(
       (acc: Record<string, string>, record) => {
@@ -213,7 +209,7 @@ export default function Attendance() {
     setAttendanceLoading(true);
     try {
       const attendanceData = await fetchAttendance({
-        forceRefresh: true,
+        forceRefresh: false,
         updateCache: true,
       });
 

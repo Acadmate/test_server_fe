@@ -70,5 +70,6 @@ export const config = {
     "/gpacalc",
     "/logs",
     "/messmenu",
+    "/info",
   ],
 };

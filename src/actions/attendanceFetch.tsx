@@ -1,8 +1,8 @@
 "use client";
 import { apiClient } from "@/lib/api";
 import { fetchOrder } from "./orderFetch";
-import { fetchTimetable } from "./timetableFetch";
-import { fetchCalender } from "./calendarFetch";
+// import { fetchTimetable } from "./timetableFetch";
+// import { fetchCalender } from "./calendarFetch";
 
 /**
  * @param {Object} options
@@ -114,8 +114,8 @@ export async function fetchAttendance({
     }
 
     setTimeout(async () => {
-      await fetchTimetable();
-      await fetchCalender();
+      // await fetchTimetable();
+      // await fetchCalender();
       await fetchOrder();
     }, 0);
 

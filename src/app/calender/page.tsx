@@ -1,7 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { fetchCalender } from "@/actions/calendarFetch";
 import Title from "@/components/shared/title";
 import RefreshHeader from "@/components/shared/RefreshHeader";
@@ -10,8 +9,6 @@ import {
   formatLastFetchedText,
   setLastFetchedTime,
 } from "@/lib/lastFetchedUtils";
-import { useAuthStore } from "@/store/authStore";
-import { AuthLoadingScreen } from "@/components/shared/LoadingComponents";
 
 interface CalendarEvent {
   title: string;
@@ -27,11 +24,6 @@ interface CalendarData {
   [month: string]: CalendarMonth;
 }
 
-interface FetchOptions {
-  forceRefresh: boolean;
-  updateCache: boolean;
-}
-
 const MonthNavigate = dynamic(
   () => import("@/components/calendar/month_navigate"),
   {
@@ -44,13 +36,13 @@ const MainCal = dynamic(() => import("@/components/calendar/main"), {
 });
 
 export default function Calendar() {
-  const router = useRouter();
-  const { isAuthenticated, isCheckingAuth } = useAuthStore();
-
-  // Data states
+  const [isInitializing, setIsInitializing] = useState(true); // For the initial full-page skeleton
+  const [isRefreshing, setIsRefreshing] = useState(false); // For the refresh button spinner & blur effect
+  const [error, setError] = useState(false);
   const [calendarData, setCalendarData] = useState<CalendarData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => setIsClient(true), []);
 
   const availableMonths = useMemo(() => {
     if (!calendarData) return [];
@@ -76,97 +68,52 @@ export default function Calendar() {
       .sort((a, b) => a - b);
   }, [calendarData]);
 
-  // Refresh function - forces fresh data
-  const refresh = useCallback(async () => {
-    if (!isAuthenticated) return;
-
-    console.log("Manual refresh triggered - forcing fresh data");
-    setLoading(true);
-    setHasError(false);
-
+  const refreshData = useCallback(async () => {
+    setIsRefreshing(true);
+    setError(false);
     try {
-      const fetchedCalendar = (await fetchCalender({
-        forceRefresh: true, // Only force refresh on manual refresh
+      const data = await fetchCalender({
+        forceRefresh: true,
         updateCache: true,
-      } as FetchOptions)) as CalendarData | null;
-
-      if (fetchedCalendar) {
-        setCalendarData(fetchedCalendar);
-        setHasError(false);
+      });
+      if (data) {
+        setCalendarData(data);
         setLastFetchedTime("calendar");
       } else {
-        setHasError(true);
+        throw new Error("Failed to fetch calendar data");
       }
-    } catch (error) {
-      console.error("Error fetching calendar data:", error);
-      setHasError(true);
-      if (error instanceof Error && error.message.includes("401")) {
-        router.replace("/login");
-      }
+    } catch (e) {
+      console.error("Error refreshing calendar data:", e);
+      setError(true);
     } finally {
-      setLoading(false);
+      setIsRefreshing(false);
     }
-  }, [isAuthenticated, router]);
+  }, []);
 
-  // Initial load function - uses cache when possible
-  const loadCalendarData = useCallback(async () => {
-    if (!isAuthenticated) return;
-
-    console.log("Loading calendar data - checking cache first");
-    setLoading(true);
-    setHasError(false);
-
+  const initializeData = useCallback(async () => {
+    setIsInitializing(true);
+    setError(false);
     try {
-      const fetchedCalendar = (await fetchCalender({
-        forceRefresh: false, // ✅ Use cache if available
-        updateCache: true,
-      } as FetchOptions)) as CalendarData | null;
-
-      if (fetchedCalendar) {
-        setCalendarData(fetchedCalendar);
-        setHasError(false);
+      const data = await fetchCalender({ forceRefresh: false });
+      if (data) {
+        setCalendarData(data);
         setLastFetchedTime("calendar");
-        console.log("Calendar data loaded successfully");
       } else {
-        console.log("No calendar data returned");
-        setHasError(true);
+        throw new Error("Failed to fetch calendar or invalid data format");
       }
-    } catch (error) {
-      console.error("Error fetching calendar data:", error);
-      setHasError(true);
-      if (error instanceof Error && error.message.includes("401")) {
-        router.replace("/login");
-      }
+    } catch (err) {
+      console.error("Error initializing calendar data:", err);
+      setError(true);
     } finally {
-      setLoading(false);
+      setIsInitializing(false);
     }
-  }, [isAuthenticated, isCheckingAuth, router]);
+  }, []);
 
   useEffect(() => {
-    if (isCheckingAuth || !isAuthenticated) return;
-    loadCalendarData();
-  }, [loadCalendarData, isAuthenticated, isCheckingAuth]);
+    initializeData();
+  }, [initializeData]);
 
-  // Show loading while checking authentication
-  if (isCheckingAuth) {
-    return <AuthLoadingScreen />;
-  }
-
-  // Show redirecting screen if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-gray-600">
-            Access denied. Redirecting to login...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show skeleton while loading (first time or refreshing)
-  if (loading) {
+  if (!isClient) {
     return (
       <div className="flex flex-col gap-2 w-fit mx-auto">
         <div className="h-16" />
@@ -177,13 +124,24 @@ export default function Calendar() {
     );
   }
 
-  // Show error state only if there's an actual error AND loading is complete
-  if (hasError || !calendarData) {
+  if (isInitializing) {
+    return (
+      <div className="flex flex-col gap-2 w-fit mx-auto">
+        <div className="h-16" />
+        <div className="w-[95vw] lg:w-[72vw] mx-auto h-16" />
+        <div className="h-12" />
+        <PageSkeleton type="calendar" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !calendarData) {
     return (
       <div className="text-center text-lg mt-16">
         <p>Failed to load calendar data. Please try again later.</p>
         <button
-          onClick={refresh}
+          onClick={refreshData}
           className="mt-4 bg-green-400 text-black font-semibold p-2 rounded-md active:scale-95 transition-all duration-300"
         >
           Retry
@@ -192,7 +150,7 @@ export default function Calendar() {
     );
   }
 
-  // Show main content when everything is loaded successfully
+  // Main content
   return (
     <div className="flex flex-col gap-2 w-fit mx-auto">
       <style jsx global>{`
@@ -224,8 +182,8 @@ export default function Calendar() {
       />
 
       <RefreshHeader
-        onRefresh={refresh}
-        loading={loading}
+        onRefresh={refreshData}
+        loading={isRefreshing}
         className="w-[95vw] lg:w-[72vw] mx-auto"
         additionalInfo={formatLastFetchedText("calendar")}
         zIndex={30}
@@ -233,7 +191,7 @@ export default function Calendar() {
       <Title />
       <div
         className={`transition-all duration-300 ${
-          loading ? "animate-blur-pulse" : ""
+          isRefreshing ? "animate-blur-pulse" : ""
         }`}
       >
         <MainCal

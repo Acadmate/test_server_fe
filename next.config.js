@@ -1,20 +1,17 @@
 const withPWA = require("next-pwa")({
   dest: "public",
   register: true,
-  skipWaiting: true, // Changed to true to prevent multiple registrations
+  skipWaiting: true,
   cacheOnFrontEndNav: true,
-  disable: process.env.NODE_ENV === "development", // Disable in development to prevent GenerateSW warnings
+  disable: process.env.NODE_ENV === "development",
   buildExcludes: [
-    /app-build-manifest\.json$/,
-    /middleware-manifest\.json$/,
-    /build-manifest\.json$/,
+    // Exclude just map files
     /\.map$/,
   ],
-  exclude: [
-    // Exclude all .js files from service worker generation
-    /\.js$/,
-    // Exclude source maps
-    /\.map$/,
+  publicExcludes: [
+    // Exclude manifest files from being copied to public
+    "!manifest.json",
+    "!manifest.webmanifest",
   ],
 
   // Use version-based revision for better cache busting
@@ -26,6 +23,7 @@ const withPWA = require("next-pwa")({
     { url: "/attendance", revision: "2.0.0" },
     { url: "/gpacalc", revision: "2.0.0" },
     { url: "/supadocs", revision: "2.0.0" },
+    { url: "/info", revision: "2.0.0" },
     { url: "/offline.html", revision: "2.0.0" },
   ],
 
