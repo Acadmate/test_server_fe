@@ -1,5 +1,13 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo, Suspense, lazy, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  Suspense,
+  lazy,
+  useRef,
+} from "react";
 import dynamic from "next/dynamic";
 import { fetchTimetable } from "@/actions/timetableFetch";
 import { fetchOrder } from "@/actions/orderFetch";
@@ -11,8 +19,12 @@ import PageSkeleton from "@/components/shared/skeleton/PageSkeleton";
 import { updateCacheTimestamp } from "@/lib/utils";
 import { formatLastFetchedText, setLastFetchedTime } from "@/lib/utils";
 
-const Toggle = dynamic(() => import("../../components/shared/switchTheme"), { ssr: false });
-const Animation = dynamic(() => import("@/components/shared/noclass"), { ssr: false });
+const Toggle = dynamic(() => import("../../components/shared/switchTheme"), {
+  ssr: false,
+});
+const Animation = dynamic(() => import("@/components/shared/noclass"), {
+  ssr: false,
+});
 const Download = lazy(() => import("../../components/timetable/download"));
 
 interface Period {
@@ -28,7 +40,12 @@ interface Timetable {
 
 // Utils
 function toInt(value: unknown, fallback: number): number {
-  const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+  const n =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+      ? Number(value)
+      : NaN;
   return Number.isFinite(n) ? n : fallback;
 }
 
@@ -71,21 +88,28 @@ export default function TimetablePage() {
 
   useEffect(() => setIsClient(true), []);
 
-  const safeSetOrderFromValue = useCallback((value: number | "off" | null, len: number) => {
-    if (value === "off") {
-      setIsHoliday(true);
-      setOrder(1);
-      return;
-    }
-    setIsHoliday(false);
-    const numeric = toInt(value, 1);
-    setOrder(clampOrder(numeric, len));
-  }, []);
+  const safeSetOrderFromValue = useCallback(
+    (value: number | "off" | null, len: number) => {
+      if (value === "off") {
+        setIsHoliday(true);
+        setOrder(1);
+        return;
+      }
+      setIsHoliday(false);
+      const numeric = toInt(value, 1);
+      setOrder(clampOrder(numeric, len));
+    },
+    []
+  );
 
   const refreshData = useCallback(async () => {
     setLoading(true);
     try {
-      const timetableData = await fetchTimetable({ forceRefresh: true });
+      const timetableData = await fetchTimetable({
+        forceRefresh: true,
+        updateCache: true,
+      });
+
       if (timetableData && Array.isArray(timetableData)) {
         setTimeTable(timetableData);
         const o = await fetchOrder({ forceRefresh: true });
@@ -111,7 +135,8 @@ export default function TimetablePage() {
     setError(false);
     try {
       const timetableData = await fetchTimetable({
-        forceRefresh: true,
+        forceRefresh: false,
+        updateCache: true,
       });
 
       if (!timetableData || !Array.isArray(timetableData)) {
@@ -126,14 +151,13 @@ export default function TimetablePage() {
       const stored = readStoredOrder();
       const value = fetchedOrder ?? stored ?? 1;
       safeSetOrderFromValue(value, timetableData.length);
-
     } catch (err) {
       console.error("Error initializing timetable data:", err);
       setError(true);
     } finally {
       setLoading(false);
     }
-    }, [safeSetOrderFromValue]);
+  }, [safeSetOrderFromValue]);
 
   useEffect(() => {
     initializeData();
@@ -141,7 +165,10 @@ export default function TimetablePage() {
 
   useEffect(() => {
     if (currentSlotRef.current) {
-      currentSlotRef.current.scrollIntoView({ behavior: "instant", block: "center" });
+      currentSlotRef.current.scrollIntoView({
+        behavior: "instant",
+        block: "center",
+      });
     }
   }, [order, currentSlot]);
 
@@ -194,7 +221,7 @@ export default function TimetablePage() {
 
   const currentDayTimetable = useMemo(() => {
     if (!timeTable || timeTable.length === 0) return null;
-    const idx = orderToIndex(order, timeTable.length); // Safe and 0-based
+    const idx = orderToIndex(order, timeTable.length);
     return timeTable[idx] || null;
   }, [timeTable, order]);
 
@@ -206,16 +233,22 @@ export default function TimetablePage() {
     return (
       <div className="flex flex-col items-center justify-center w-full h-[85vh] my-5 gap-4">
         <Animation />
-        <div className="text-3xl dark:text-green-400 font-extrabold">No classes today...</div>
-        <div className="absolute bottom-10 flex flex-row items-center justify-between gap-2 p-2 font-bold bg-gray-500/70 dark:bg-black/70 backdrop-blur-sm text-white rounded-full shadow-lg">
+        <div className="text-3xl dark:text-green-400 font-extrabold">
+          No classes today...
+        </div>
+        <div className="fixed bottom-10 flex flex-row items-center justify-between gap-2 p-2 font-bold bg-gray-500/70 dark:bg-black/70 backdrop-blur-sm text-white rounded-full shadow-lg">
           <div
             className="p-1 rounded bg-green-400 dark:text-black active:scale-95 duration-400 transition-all"
             onClick={async () => {
-              // Re-sync order if user presses Today
-              const o = (await fetchOrder({ forceRefresh: false })) ?? readStoredOrder() ?? 1;
+              const o =
+                (await fetchOrder({ forceRefresh: false })) ??
+                readStoredOrder() ??
+                1;
               setIsHoliday(o === "off");
               if (o !== "off") {
-                setOrder(prev => clampOrder(toInt(o, prev), timeTable.length));
+                setOrder((prev) =>
+                  clampOrder(toInt(o, prev), timeTable.length)
+                );
               }
             }}
           >
@@ -224,8 +257,8 @@ export default function TimetablePage() {
           <div
             className="text-black dark:text-green-400 text-[35px] active:scale-95 duration-400 transition-all rounded-3xl border-2 border-black dark:border-white"
             onClick={() => {
-              setIsHoliday(false); // Navigate to previous day grid
-              setOrder(prev => (prev === 1 ? timeTable.length : prev - 1));
+              setIsHoliday(false);
+              setOrder((prev) => (prev === 1 ? timeTable.length : prev - 1));
             }}
           >
             <IoCaretBackCircleSharp />
@@ -237,7 +270,7 @@ export default function TimetablePage() {
             className="text-black dark:text-green-400 text-[35px] active:scale-95 duration-400 transition-all rounded-3xl border-2 border-black dark:border-white"
             onClick={() => {
               setIsHoliday(false);
-              setOrder(prev => (prev === timeTable.length ? 1 : prev + 1));
+              setOrder((prev) => (prev === timeTable.length ? 1 : prev + 1));
             }}
           >
             <IoCaretForwardCircle />
@@ -248,14 +281,17 @@ export default function TimetablePage() {
   }
 
   return (
-    <div className="flex flex-col justify-center items-center mx-auto h-fit w-screen lg:w-[73vw]">
-      <RefreshHeader
-        onRefresh={refreshData}
-        loading={loading}
-        zIndex={30}
-        className="w-[95vw] lg:w-[72vw] mx-auto"
-        additionalInfo={formatLastFetchedText("timetable")}
-      />
+    <div className="flex flex-col justify-center items-center mx-auto h-fit w-screen lg:w-[73vw] pb-20 lg:pb-4">
+      {/* FIXED: Added higher z-index and proper positioning */}
+      <div className="relative z-50 w-full">
+        <RefreshHeader
+          onRefresh={refreshData}
+          loading={loading}
+          zIndex={50}
+          className="w-[95vw] lg:w-[72vw] mx-auto"
+          additionalInfo={formatLastFetchedText("timetable")}
+        />
+      </div>
 
       <div className="flex flex-row w-full lg:w-[74vw] justify-between my-2 px-8">
         <div className="flex flex-row gap-4">
@@ -276,7 +312,9 @@ export default function TimetablePage() {
       ) : error ? (
         <div className="h-screen w-screen flex items-center justify-center">
           <div className="text-center">
-            <p className="text-xl text-red-500 mb-4">Failed to load timetable</p>
+            <p className="text-xl text-red-500 mb-4">
+              Failed to load timetable
+            </p>
             <button
               onClick={initializeData}
               className="bg-green-400 text-black px-4 py-2 rounded"
@@ -295,41 +333,47 @@ export default function TimetablePage() {
                   <div className="flex flex-row font-bold text-xl mx-3 my-1 px-3 w-fit text-black rounded bg-green-300/40 dark:bg-[#15241b] dark:text-[#C1FF72]">
                     {currentDayTimetable.day}
                   </div>
-                  <div>
+                  <div className="hidden">
                     <Suspense fallback={<Skeleton className="h-8 w-32" />}>
                       <Download func={downloadPDF} />
                     </Suspense>
                   </div>
                 </div>
-                {currentDayTimetable.periods.slice(0, -2).map((period, periodIndex) => (
-                  <div
-                    key={`${period.timeSlot}-${periodIndex}`}
-                    ref={periodIndex === currentSlot ? currentSlotRef : null}
-                    className={`flex flex-row rounded py-1 px-2 w-full text-lg md:text-xl font-bold gap-2 ${
-                      periodIndex === currentSlot ? "border-2 border-[#C1FF72] border-dashed" : ""
-                    }`}
-                  >
-                    <div className="flex flex-col items-center justify-center w-[70px] bg-gray-100 md:w-[20vw] md:h-[8vh] text-center text-base md:text-lg dark:bg-black rounded-[20px] p-2">
-                      {period.timeSlot}
-                    </div>
+                {currentDayTimetable.periods
+                  .slice(0, -2)
+                  .map((period, periodIndex) => (
                     <div
-                      className={`flex flex-row ${
-                        period.period.includes("P") && period.course
-                          ? "bg-green-300/40 dark:bg-[#15241b] dark:text-[#C1FF72]"
-                          : !period.period.includes("P") && period.course
-                          ? "bg-orange-300/40 dark:bg-[#2e2a14] dark:text-[#FFDD70]"
-                          : "bg-gray-100 dark:bg-black text-gray-900 dark:text-white"
-                      } w-full rounded-[20px] items-center justify-center text-center`}
+                      key={`${period.timeSlot}-${periodIndex}`}
+                      ref={periodIndex === currentSlot ? currentSlotRef : null}
+                      className={`flex flex-row rounded py-1 px-2 w-full text-lg md:text-xl font-bold gap-2 ${
+                        periodIndex === currentSlot
+                          ? "border-2 border-[#C1FF72] border-dashed"
+                          : ""
+                      }`}
                     >
-                      {period.course?.CourseTitle || ""}
+                      <div className="flex flex-col items-center justify-center w-[70px] bg-gray-100 md:w-[20vw] md:h-[8vh] text-center text-base md:text-lg dark:bg-black rounded-[20px] p-2">
+                        {period.timeSlot}
+                      </div>
+                      <div
+                        className={`flex flex-row ${
+                          period.period.includes("P") && period.course
+                            ? "bg-green-300/40 dark:bg-[#15241b] dark:text-[#C1FF72]"
+                            : !period.period.includes("P") && period.course
+                            ? "bg-orange-300/40 dark:bg-[#2e2a14] dark:text-[#FFDD70]"
+                            : "bg-gray-100 dark:bg-black text-gray-900 dark:text-white"
+                        } w-full rounded-[20px] items-center justify-center text-center`}
+                      >
+                        {period.course?.CourseTitle || ""}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             ) : (
               <div className="text-center p-8">
                 <p className="text-xl mb-4">No timetable data available</p>
-                <p className="text-gray-500">TimeTable length: {timeTable.length}</p>
+                <p className="text-gray-500">
+                  TimeTable length: {timeTable.length}
+                </p>
                 <p className="text-gray-500">Current order: {order}</p>
               </div>
             )}
@@ -351,7 +395,10 @@ export default function TimetablePage() {
                 </div>
                 <div className="flex flex-col">
                   {timeTable.map((item, rowIdx) => (
-                    <div key={`${item.day}-${rowIdx}`} className="flex flex-row justify-between w-full my-1">
+                    <div
+                      key={`${item.day}-${rowIdx}`}
+                      className="flex flex-row justify-between w-full my-1"
+                    >
                       <div className="flex flex-col text-nowrap w-[50px] p-1 text-lg font-extrabold items-center justify-center">
                         {item.day}
                       </div>
@@ -380,26 +427,36 @@ export default function TimetablePage() {
             ) : (
               <div className="text-center p-8">
                 <p className="text-xl mb-4">No timetable data available</p>
-                <p className="text-gray-500">TimeTable length: {timeTable.length}</p>
+                <p className="text-gray-500">
+                  TimeTable length: {timeTable.length}
+                </p>
                 <p className="text-gray-500">Current order: {order}</p>
               </div>
             )}
           </div>
 
-          <div className="lg:hidden fixed flex flex-row items-center justify-between gap-2 p-2 font-bold bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-500/70 dark:bg-black/70 backdrop-blur-sm text-white rounded-full shadow-lg">
+          <div className="lg:hidden fixed flex flex-row items-center justify-between gap-2 p-2 font-bold bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-500/70 dark:bg-black/70 backdrop-blur-sm text-white rounded-full shadow-lg z-40">
             <div
               className="p-1 rounded bg-green-400 dark:text-black active:scale-95 duration-400 transition-all"
               onClick={async () => {
-                const o = (await fetchOrder({ forceRefresh: false })) ?? readStoredOrder() ?? 1;
+                const o =
+                  (await fetchOrder({ forceRefresh: false })) ??
+                  readStoredOrder() ??
+                  1;
                 setIsHoliday(o === "off");
-                if (o !== "off") setOrder(prev => clampOrder(toInt(o, prev), timeTable.length));
+                if (o !== "off")
+                  setOrder((prev) =>
+                    clampOrder(toInt(o, prev), timeTable.length)
+                  );
               }}
             >
               Today
             </div>
             <div
               className="text-black dark:text-green-400 text-[35px] active:scale-95 duration-400 transition-all rounded-3xl border-2 border-black dark:border-white"
-              onClick={() => setOrder(prev => (prev === 1 ? timeTable.length : prev - 1))}
+              onClick={() =>
+                setOrder((prev) => (prev === 1 ? timeTable.length : prev - 1))
+              }
             >
               <IoCaretBackCircleSharp />
             </div>
@@ -408,7 +465,9 @@ export default function TimetablePage() {
             </div>
             <div
               className="text-black dark:text-green-400 text-[35px] active:scale-95 duration-400 transition-all rounded-3xl border-2 border-black dark:border-white"
-              onClick={() => setOrder(prev => (prev === timeTable.length ? 1 : prev + 1))}
+              onClick={() =>
+                setOrder((prev) => (prev === timeTable.length ? 1 : prev + 1))
+              }
             >
               <IoCaretForwardCircle />
             </div>

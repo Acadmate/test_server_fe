@@ -1,7 +1,7 @@
 "use client";
 import { apiClient } from "@/lib/api";
 import { fetchOrder } from "./orderFetch";
-// import { fetchTimetable } from "./timetableFetch";
+import { fetchTimetable } from "./timetableFetch";
 // import { fetchCalender } from "./calendarFetch";
 
 /**
@@ -14,7 +14,7 @@ import { fetchOrder } from "./orderFetch";
 export async function fetchAttendance({
   forceRefresh = false,
   updateCache = true,
-  cacheExpiry = 4 * 60 * 60 * 1000, // 4h
+  cacheExpiry = 4 * 60 * 60 * 1000,
 } = {}) {
   console.log(
     `fetchAttendance: ${
@@ -114,7 +114,7 @@ export async function fetchAttendance({
     }
 
     setTimeout(async () => {
-      // await fetchTimetable();
+      await fetchTimetable();
       // await fetchCalender();
       await fetchOrder();
     }, 0);
@@ -140,8 +140,7 @@ export async function fetchAttendance({
 }
 
 /**
- * Clears the attendance cache
- * @returns {Promise<boolean>} Success status
+ * @returns {Promise<boolean>}
  */
 export async function clearAttendanceCache() {
   if ("caches" in window) {

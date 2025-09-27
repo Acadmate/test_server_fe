@@ -222,7 +222,7 @@ export async function fetchCalender({
           });
           await cache.put(CACHE_KEY, responseToCache);
           updateCacheMetadata(data);
-          console.log("✅ Calendar cache updated successfully");
+          console.log("Calendar cache updated successfully");
         } catch (error) {
           console.error("Error updating calendar cache:", error);
         }
@@ -240,7 +240,7 @@ export async function fetchCalender({
 
           if (cachedResponse) {
             const data = await cachedResponse.json();
-            console.log("⚠️ Serving stale calendar cache as fallback");
+            console.log("Serving stale calendar cache as fallback");
             return data;
           }
         } catch (cacheError) {

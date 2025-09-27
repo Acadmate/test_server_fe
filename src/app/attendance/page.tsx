@@ -167,7 +167,6 @@ export default function Attendance() {
       } catch (error) {
         console.error("Error fetching data:", error);
         setAttendanceLoading(false);
-        // If data fetch fails due to auth, redirect to login
         if (error instanceof Error && error.message.includes("401")) {
           router.replace("/login");
         }
@@ -209,7 +208,7 @@ export default function Attendance() {
     setAttendanceLoading(true);
     try {
       const attendanceData = await fetchAttendance({
-        forceRefresh: false,
+        forceRefresh: true,
         updateCache: true,
       });
 
@@ -223,7 +222,6 @@ export default function Attendance() {
     } catch (error) {
       console.error("Error fetching attendance:", error);
       setAttendanceLoading(false);
-      // If refresh fails due to auth, redirect to login
       if (error instanceof Error && error.message.includes("401")) {
         router.replace("/login");
       }
@@ -232,7 +230,6 @@ export default function Attendance() {
     }
   };
 
-  // Show loading while data is being fetched
   const blurPulseStyle = loading
     ? {
         animation: "blurPulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1)",
@@ -267,7 +264,7 @@ export default function Attendance() {
         onRefresh={refresh}
         loading={loading}
         zIndex={30}
-        className="w-[95vw] lg:w-[72vw] mx-auto"
+        className="w-full lg:w-[72vw] mx-auto"
         additionalInfo={formatLastFetchedText("attendance")}
       />
 
