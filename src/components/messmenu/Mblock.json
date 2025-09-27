@@ -1,0 +1,361 @@
+{
+  "messName": "Mblock",
+  "weekMenu": [
+    {
+      "name": "SUNDAY",
+      "meals": {
+        "BREAKFAST": [
+          "Bread",
+          "Butter",
+          "Jam",
+          "Aloo Paratha",
+          "Curd",
+          "Idli",
+          "Sambar",
+          "Chutney",
+          "Idli Podi",
+          "Oil",
+          "Boiled Egg",
+          "Tea/Coffee/Milk",
+          "Banana"
+        ],
+        "LUNCH": [
+          "Chappathi",
+          "Chappathi",
+          "Yellow Dal",
+          "Veg Dalcha",
+          "Tomato Pulao",
+          "Steamed Rice",
+          "Kara Kulambu",
+          "Kootu",
+          "Lemon Rasam",
+          "Buttermilk",
+          "Frymes",
+          "Pickle"
+        ],
+        "SNACKS": [
+          "Peanut Sundal",
+          "Tea/Coffee/Milk",
+          "Bread",
+          "Butter",
+          "Jam"
+        ],
+        "DINNER": [
+          "Aloo Paratha",
+          "Curd",
+          "Chicken Gravy",
+          "Steamed Rice",
+          "Sambar",
+          "Jeera Rasam",
+          "Poriyal",
+          "Buttermilk",
+          "Milk",
+          "Salad",
+          "Pickle"
+        ]
+      }
+    },
+    {
+      "name": "MONDAY",
+      "meals": {
+        "BREAKFAST": [
+          "Bread",
+          "Butter",
+          "Jam",
+          "Chappathi",
+          "Channa Dal Masala",
+          "Pongal",
+          "Vada",
+          "Coconut Chutney",
+          "Udipi Sambar",
+          "Tea/Coffee/Milk",
+          "Banana"
+        ],
+        "LUNCH": [
+          "Chappathi",
+          "Black Channa",
+          "Veg Pulao",
+          "Garlic Dal",
+          "Steamed Rice",
+          "Sambar",
+          "Pineapple Rasam",
+          "Cabbage Thoran",
+          "Butter Milk",
+          "Frymes",
+          "Pickle"
+        ],
+        "SNACKS": ["Samosa", "Tea/Lemon juice/Milk", "Bread", "Butter", "Jam"],
+        "DINNER": [
+          "Chappati",
+          "Mix Vegetable Curry",
+          "Idli",
+          "Idli podi",
+          "Oil",
+          "Sambar",
+          "Groundnut Chutney",
+          "Steamed Rice",
+          "Ginger Rasam",
+          "Fish Kuzhambu",
+          "Buttermilk",
+          "Pickle",
+          "Salad",
+          "Milk"
+        ]
+      }
+    },
+    {
+      "name": "TUESDAY",
+      "meals": {
+        "BREAKFAST": [
+          "Bread",
+          "Butter",
+          "Jam",
+          "Poori",
+          "Aloo Masala",
+          "Wheat Rava Upma",
+          "Sambar",
+          "Chutney",
+          "Tea/Coffee/Milk",
+          "Banana"
+        ],
+        "LUNCH": [
+          "Semiya Payasam",
+          "Chappathi",
+          "Hara Moong Dal",
+          "Kabuli Channa Pulao",
+          "Veg Sabji",
+          "Steamed Rice",
+          "Vatha Kuzhambu",
+          "Tomato Rasam",
+          "Keerai Kootu",
+          "Butter Milk",
+          "Frymes",
+          "Pickle"
+        ],
+        "SNACKS": ["Panni Poori with Aloo", "Tea/Coffee/Milk"],
+        "DINNER": [
+          "Chappathi",
+          "Tomato Dal",
+          "Kal Dosa",
+          "Coconut Chutney",
+          "Idli Podi",
+          "Oil",
+          "Steamed Rice",
+          "Sambar",
+          "Paruppu Rasam",
+          "Buttermilk",
+          "Salad",
+          "Pickle",
+          "Milk",
+          "Mutton Gravy"
+        ]
+      }
+    },
+    {
+      "name": "WEDNESDAY",
+      "meals": {
+        "BREAKFAST": [
+          "Bread",
+          "Butter",
+          "Jam",
+          "Idiyappam",
+          "Veg Kuruma",
+          "Poha",
+          "Mint Chutney",
+          "Tea/Coffee/Milk",
+          "Banana"
+        ],
+        "LUNCH": [
+          "Chappathi",
+          "Vegetable Curry",
+          "Dal Makhani",
+          "Variety Rice",
+          "Curd Rice",
+          "Urulai Idicha Masala",
+          "Steamed Rice",
+          "Rasam",
+          "Appalam",
+          "Pickle"
+        ],
+        "SNACKS": [
+          "Banana cake",
+          "Choco muffin",
+          "Tea/Coffee/Milk",
+          "Bread",
+          "Butter",
+          "Jam"
+        ],
+        "DINNER": [
+          "Chappathi",
+          "Paneer Butter Masala",
+          "Steamed Rice",
+          "Sambar",
+          "Jeera Rasam",
+          "Buttermilk",
+          "Pickle",
+          "Milk",
+          "Non Veg (Pepper Chicken Gravy/Chicken Biryani)"
+        ]
+      }
+    },
+    {
+      "name": "THURSDAY",
+      "meals": {
+        "BREAKFAST": [
+          "Bread",
+          "Butter",
+          "Jam",
+          "Chappathi",
+          "Vegetable Dal",
+          "Idly",
+          "Sambar",
+          "Kara Chutney",
+          "Idli Podi",
+          "Oil",
+          "Tea/Coffee/Milk",
+          "Banana"
+        ],
+        "LUNCH": [
+          "Kesari",
+          "Chappathi",
+          "Punjabi Dal Fry",
+          "Matar Pulao",
+          "Steamed Rice",
+          "Arachivitta Sambar",
+          "Mix Veg Poriyal",
+          "Paruppu Rasam",
+          "Buttermilk",
+          "Frymes",
+          "Pickle"
+        ],
+        "SNACKS": ["Masala Sundal", "Tea/Coffee/Milk", "Bread/Butter/Jam"],
+        "DINNER": [
+          "Paratha",
+          "Soya Chunks Curry",
+          "Dosa",
+          "Urulai Masala",
+          "Chutney",
+          "Idli Podi",
+          "Oil",
+          "Steamed Rice",
+          "Rasam",
+          "Chicken Kuzhambu",
+          "Buttermilk",
+          "Salad",
+          "Pickle",
+          "Milk",
+          "Cup Ice Cream"
+        ]
+      }
+    },
+    {
+      "name": "FRIDAY",
+      "meals": {
+        "BREAKFAST": [
+          "Bread",
+          "Butter",
+          "Jam",
+          "Chappathi",
+          "Green Peas Masala",
+          "Kal Dosa",
+          "Sambar",
+          "Chutney",
+          "Omelette",
+          "Tea/Coffee/Milk",
+          "Seasonal Fruit",
+          "Idli Podi",
+          "Oil"
+        ],
+        "LUNCH": [
+          "Chappathi",
+          "Yellow Dal",
+          "Veg Dalcha",
+          "Tomato Pulao",
+          "Steamed Rice",
+          "Kara Kulambu",
+          "Kootu",
+          "Lemon Rasam",
+          "Buttermilk",
+          "Frymes",
+          "Pickle"
+        ],
+        "SNACKS": [
+          "Bajji",
+          "Coconut Chutney",
+          "Veg Roll",
+          "Tea/Rose Milk/Milk",
+          "Bread",
+          "Butter",
+          "Jam"
+        ],
+        "DINNER": [
+          "Methi Chappati",
+          "Dal Makhani",
+          "Vegetable Kitchadi",
+          "Chutney",
+          "Steamed Rice",
+          "Sambar",
+          "Rasam",
+          "Poriyal",
+          "Egg Gravy",
+          "Buttermilk",
+          "Milk",
+          "Salad",
+          "Pickle"
+        ]
+      }
+    },
+    {
+      "name": "SATURDAY",
+      "meals": {
+        "BREAKFAST": [
+          "Bread",
+          "Butter",
+          "Jam",
+          "Chole Bhature",
+          "Chenna Masala",
+          "Rava Upma",
+          "Coconut Chutney",
+          "Sambar",
+          "Tea/Coffee/Milk",
+          "Banana"
+        ],
+        "LUNCH": [
+          "Chappathi",
+          "Black Channa",
+          "Veg Pulao",
+          "Garlic Dal",
+          "Steamed Rice",
+          "Sambar",
+          "Pineapple Rasam",
+          "Cabbage Thoran",
+          "Butter Milk",
+          "Frymes",
+          "Pickle"
+        ],
+        "SNACKS": [
+          "Pav Bhaji / Fruit Cake",
+          "Tea/Coffee/Milk",
+          "Bread",
+          "Butter",
+          "Jam"
+        ],
+        "DINNER": [
+          "Dosa",
+          "Kadamba Sambar",
+          "Tomato Chutney",
+          "Veg Fried Rice",
+          "Gravy Veg/Gobi Manchurian",
+          "Steamed Rice",
+          "Rasam",
+          "Buttermilk",
+          "Milk",
+          "Salad",
+          "Pickle",
+          "Idli Podi",
+          "Oil"
+        ]
+      }
+    }
+  ]
+}
