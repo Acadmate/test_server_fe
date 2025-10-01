@@ -1,0 +1,325 @@
+{
+  "messName": "GreenPearl",
+  "weekMenu": [
+    {
+      "name": "SUNDAY",
+      "meals": {
+        "BREAKFAST": [
+          "One seasonal fruit",
+          "Cornflakes with hot milk",
+          "Toast",
+          "Butter",
+          "Jam",
+          "Egg preparation",
+          "Idly",
+          "Vada",
+          "Sambar chutney",
+          "Coffee",
+          "Milk"
+        ],
+        "LUNCH": [
+          "Chapati",
+          "South veg Kurma",
+          "Beetroot Porial",
+          "Steam rice",
+          "Avaraka Sambar",
+          "Rasam",
+          "Fried rice",
+          "Subzi Mali koftha",
+          "Home style vegegtable fried rice",
+          "Ice Cream",
+          "Fish Prepararation [indian/chinese]"
+        ],
+        "SNACKS": [
+          "South Indian savoury",
+          "Bread",
+          "Butter",
+          "Jam",
+          "Tea/Milk"
+        ],
+        "DINNER": [
+          "Tossed salad",
+          "Chicken biryani",
+          "Vegetable biryani",
+          "Raitha or Ennai",
+          "Kathri kai",
+          "Fresh fruit"
+        ]
+      }
+    },
+    {
+      "name": "MONDAY",
+      "meals": {
+        "BREAKFAST": [
+          "One seasonal fruit",
+          "Cornflakes with hot milk",
+          "Toast",
+          "Butter",
+          "Jam",
+          "Egg preparation",
+          "Channa butura",
+          "Coffee",
+          "Milk"
+        ],
+        "LUNCH": [
+          "Chapathi",
+          "Makkai suzi",
+          "Egg masala",
+          "Akerai kotukatte",
+          "Drumstick masala",
+          "Brinjal vadaams",
+          "Veg karaakuzhambu",
+          "Masal curd rice",
+          "Fried potato",
+          "Curd"
+        ],
+        "SNACKS": ["Muffins", "Bread", "Butter", "Jam", "Tea/Milk"],
+        "DINNER": [
+          "Greensalad",
+          "Chapathi",
+          "Rajma masala",
+          "Aloo tomato",
+          "Steamed rice",
+          "Sambar",
+          "Rasam",
+          "Thanguri fried rice",
+          "Curry crispy chicken",
+          "Dosa chutney",
+          "Fresh fruit"
+        ]
+      }
+    },
+    {
+      "name": "TUESDAY",
+      "meals": {
+        "BREAKFAST": [
+          "One seasonal fruit",
+          "Cornflakes with hot milk",
+          "Toast",
+          "Butter",
+          "Jam",
+          "Egg preparation",
+          "Idly",
+          "Kitchadi",
+          "Mysore bonda",
+          "Sambar chutney",
+          "Coffee",
+          "Milk"
+        ],
+        "LUNCH": [
+          "Poori",
+          "Chat pat chole",
+          "Aloo soya masala",
+          "Potato rasam",
+          "Vegetable sambhar",
+          "Jeera rice",
+          "Rasam",
+          "Young manchurian",
+          "Veg ball",
+          "Curd"
+        ],
+        "SNACKS": ["Indian savoury", "Bread", "Butter", "Jam", "Tea/Milk"],
+        "DINNER": [
+          "Green salad",
+          "Chapathi",
+          "Paneer mutter",
+          "Potato salt and pepper",
+          "Dal tadka",
+          "Jeera pulav",
+          "Dosa chutney",
+          "Rice",
+          "Rasam",
+          "Sambar",
+          "Fresh fruit"
+        ]
+      }
+    },
+    {
+      "name": "WEDNESDAY",
+      "meals": {
+        "BREAKFAST": [
+          "One seasonal fruit",
+          "Cornflakes with hot milk",
+          "Toast",
+          "Butter",
+          "Jam",
+          "Egg preparation",
+          "Awin poori",
+          "Potato masala",
+          "Coffee",
+          "Milk"
+        ],
+        "LUNCH": [
+          "Chapathi",
+          "Kumbh masala",
+          "White peas curry",
+          "Sambar",
+          "Cabbage curry",
+          "Tomato rice",
+          "Rasam",
+          "Spicy fried rice",
+          "Stir fried vegetables",
+          "South Indian payasam",
+          "Fruit salad"
+        ],
+        "SNACKS": [
+          "Aloo bonda with coconut chutney",
+          "Bread",
+          "Butter",
+          "Jam",
+          "Tea/Milk"
+        ],
+        "DINNER": [
+          "Tossed salad",
+          "Chapathi",
+          "Kadhai bhindi",
+          "Akhai fry",
+          "Steam rice",
+          "Rasam",
+          "Chilly chicken",
+          "Shanghai fried rice",
+          "Fresh fruit"
+        ]
+      }
+    },
+    {
+      "name": "THURSDAY",
+      "meals": {
+        "BREAKFAST": [
+          "One seasonal fruit",
+          "Cornflakes with hot milk",
+          "Toast",
+          "Butter",
+          "Jam",
+          "Egg preparation",
+          "Thalippu dosa",
+          "Sambar chutney",
+          "Coffee",
+          "Milk"
+        ],
+        "LUNCH": [
+          "Ajwain poori",
+          "Aloo Gobi curry",
+          "Masala Dal",
+          "Snake Gourd Masala",
+          "Lady fingers",
+          "Morkulambu",
+          "Rasam",
+          "Singapore Noodles",
+          "Raw Banana",
+          "Vadam",
+          "Curd"
+        ],
+        "SNACKS": ["Fruit cake", "Bread", "Butter", "Jam", "Tea/Milk"],
+        "DINNER": [
+          "Salad",
+          "Chapathi",
+          "Egg masala",
+          "Dal makhani",
+          "Steam rice",
+          "Rasam",
+          "Tamkar pulav",
+          "Crispy fried vegetable",
+          "Idly",
+          "Sambar",
+          "Chatni",
+          "Fresh fruit"
+        ]
+      }
+    },
+    {
+      "name": "FRIDAY",
+      "meals": {
+        "BREAKFAST": [
+          "One seasonal fruit",
+          "Cornflakes with hot milk",
+          "Toast",
+          "Butter",
+          "Jam",
+          "Egg preparation",
+          "Pongal",
+          "Medu vada",
+          "Sambar chutney",
+          "Coffee",
+          "Milk"
+        ],
+        "LUNCH": [
+          "Chapathi",
+          "Miloni subzi",
+          "Chenna dal Tadkawali",
+          "Varity Rice",
+          "Urulai Varuval",
+          "Curd",
+          "vadam",
+          "Ginger garlic fried rice",
+          "Taiwan Yam",
+          "Rawa Kasari"
+        ],
+        "SNACKS": [
+          "Keerai vada with coconut chutney",
+          "Bread",
+          "Butter",
+          "Jam",
+          "Tea/Milk"
+        ],
+        "DINNER": [
+          "Salad",
+          "Tawa paratha",
+          "Butter chicken masala",
+          "Kaddai paneer",
+          "Jeera dal",
+          "Steam rice",
+          "Rasam",
+          "Three Pepper Fried rice",
+          "Fresh fruit",
+          "Ice cream"
+        ]
+      }
+    },
+    {
+      "name": "SATURDAY",
+      "meals": {
+        "BREAKFAST": [
+          "One seasonal fruit",
+          "Cornflakes with hot milk",
+          "Toast",
+          "Butter",
+          "Jam",
+          "Egg preparation",
+          "Rice sevai",
+          "Mysore bonda",
+          "Sambar",
+          "Kara chutney",
+          "Coffee",
+          "Milk"
+        ],
+        "LUNCH": [
+          "Poori",
+          "Channa masala",
+          "Gobi shimla Mirchi",
+          "Urulapattani masala",
+          "South indian Dal",
+          "Hakka noodles",
+          "South Indian vegetable table",
+          "Rasam",
+          "Steam rice",
+          "Vadam",
+          "Vegetable hakka Noodles",
+          "Stir fried vegetables",
+          "Curd"
+        ],
+        "SNACKS": ["Pav bhaji", "Bread", "Butter", "Jam", "Tea/Milk"],
+        "DINNER": [
+          "Green salad",
+          "Chapathi",
+          "Aloo mutter masala dal",
+          "Steam rice",
+          "Pepper rasam",
+          "Chilly potato",
+          "Mutter pulao",
+          "Fresh fruits"
+        ]
+      }
+    }
+  ]
+}
