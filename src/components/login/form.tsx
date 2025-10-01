@@ -1,4 +1,4 @@
-// Updated LoginForm.tsx
+// src/components/login/form.tsx
 "use client";
 import "@/app/globals.css";
 import "@/components/loaderButton.css";
@@ -18,7 +18,6 @@ import {
   Form,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 
@@ -61,59 +60,32 @@ export default function LoginForm() {
     setLoading(true);
     setError("");
 
-    const payload = {
-      username: values.username,
-      password: values.password,
-    };
-
     try {
-      const response = await axios.post(`${api_url}/login`, payload, {
+      const response = await axios.post(`${api_url}/login`, values, {
         withCredentials: true,
       });
 
-      if (response.status === 200) {
+      if (response.status === 200 && response.data.success) {
         const data: LoginResponse = response.data;
+        setCookie("token", data.token, 1);
+        setupAuthInterceptor();
+        axios.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${data.token}`;
 
-        if (data.success && data.token) {
-          // Set cookie and axios header
-          setCookie("token", data.token, 7);
-          setupAuthInterceptor();
-          axios.defaults.headers.common[
-            "Authorization"
-          ] = `Bearer ${data.token}`;
-
-          // Update auth store and trigger auth check
-          if (data.user) {
-            setAuthenticatedUser(data.user);
-          }
-
-          // Force a re-check to ensure AuthGuard responds immediately
-          await checkAuth();
-
-          // AuthGuard will handle the redirect automatically
-        } else {
-          setError(
-            data.message || "Login failed. Please check your credentials."
-          );
-        }
+        if (data.user) setAuthenticatedUser(data.user);
+        await checkAuth();
       } else {
-        setError("Login failed. Please check your credentials.");
+        setError(
+          response.data.message || "Login failed. Please check your credentials."
+        );
       }
     } catch (err: unknown) {
-      if (err && typeof err === "object" && "response" in err) {
-        const axiosError = err as {
-          response?: { data?: { message?: string } };
-        };
-        if (axiosError.response?.data?.message) {
-          setError(axiosError.response.data.message);
-        } else {
-          setError(
-            "Login failed. Please check your connection or credentials."
-          );
-        }
-      } else {
-        setError("Login failed. Please check your connection or credentials.");
-      }
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      setError(
+        axiosError.response?.data?.message ||
+          "Login failed. An unexpected error occurred."
+      );
       console.log("Error:", err);
     } finally {
       setLoading(false);
@@ -123,7 +95,7 @@ export default function LoginForm() {
   return (
     <Form {...form}>
       <form
-        className="flex flex-col gap-4 p-4 rounded-lg"
+        className="flex flex-col gap-8 max-w-md mx-auto"
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <FormField
@@ -131,60 +103,39 @@ export default function LoginForm() {
           name="username"
           render={({ field }) => (
             <FormItem>
-              <div className="relative z-0">
+              <div className="relative">
                 <Input
                   id="username"
-                  aria-label="Username"
-                  className={`rounded h-[55px] md:h-[60px] ${
-                    error ? "border-red-500" : "border-gray-400"
-                  } block w-full px-4 pb-2.5 pt-5 text-lg font-semibold bg-zinc-200/70 dark:bg-black border dark:focus:border-none focus:border-white focus:ring-0 focus:outline-none peer`}
-                  placeholder=" "
+                  placeholder="Email Address"
                   type="text"
                   {...field}
                   required
+                  className="w-full h-14 px-5 text-white bg-black/70 rounded-lg border border-purple-500/50 focus:border-purple-400 focus:ring-purple-500/20 focus:ring-2 outline-none text-base font-medium transition-all duration-300 placeholder:text-gray-400"
                 />
-                <FormLabel
-                  htmlFor="username"
-                  className="absolute text-md text-black/70 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4"
-                >
-                  Username
-                </FormLabel>
               </div>
               <FormMessage />
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="password"
           render={({ field }) => (
             <FormItem>
-              <div className="relative z-0">
+              <div className="relative">
                 <Input
                   id="password"
-                  aria-label="Password"
-                  className={`rounded h-[55px] md:h-[60px] ${
-                    error ? "border-red-500" : "border-gray-400"
-                  } block w-full px-4 pb-2.5 pt-5 text-lg font-semibold bg-zinc-200/70 dark:bg-black border dark:focus:border-none focus:border-white focus:ring-0 focus:outline-none peer`}
-                  placeholder=" "
+                  placeholder="Password"
                   type={visible ? "text" : "password"}
                   {...field}
                   required
-                  onChange={(e) => {
-                    field.onChange(e);
-                    setVisible(e.target.value.length > 0 ? visible : false);
-                  }}
+                  className="w-full h-14 px-5 text-white bg-black/70 rounded-lg border border-blue-500/50 focus:border-blue-400 focus:ring-blue-500/20 focus:ring-2 outline-none text-base font-medium transition-all duration-300 placeholder:text-gray-400"
                 />
-                <FormLabel
-                  htmlFor="password"
-                  className="absolute text-md text-black/70 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4"
-                >
-                  Password
-                </FormLabel>
                 {field.value.length > 0 && (
                   <div
                     onClick={() => setVisible((prev) => !prev)}
-                    className="absolute right-3 top-4 md:top-5 text-2xl w-fit h-fit cursor-pointer"
+                    className="absolute right-5 top-1/2 -translate-y-1/2 text-2xl text-blue-400 cursor-pointer"
                   >
                     {visible ? <IoMdEye /> : <IoMdEyeOff />}
                   </div>
@@ -195,10 +146,11 @@ export default function LoginForm() {
           )}
         />
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+
         <Button
           type="submit"
-          className="self-center mt-4 bg-[#9cc95e] text-white text-lg px-7 py-3 rounded-lg w-full hover:shadow-lg transition-all duration-200 font-bold hover:bg-[#BFFD70] active:scale-95 active:bg-[#86af4d] disabled:opacity-70"
+          className="w-1/2 self-center h-14 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-lg rounded-2xl hover:shadow-lg hover:shadow-purple-500/40 transition-all duration-300 active:scale-95 disabled:opacity-70 mt-6"
           disabled={loading}
         >
           {loading ? <div className="loader"></div> : "Log In"}
