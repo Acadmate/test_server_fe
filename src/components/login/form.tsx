@@ -1,4 +1,3 @@
-// src/components/login/form.tsx
 "use client";
 import "@/app/globals.css";
 import "@/components/loaderButton.css";
@@ -95,7 +94,7 @@ export default function LoginForm() {
   return (
     <Form {...form}>
       <form
-        className="flex flex-col gap-8 max-w-md mx-auto"
+        className="flex flex-col gap-6 max-w-md mx-auto"
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <FormField
@@ -150,7 +149,7 @@ export default function LoginForm() {
 
         <Button
           type="submit"
-          className="w-1/2 self-center h-14 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-lg rounded-2xl hover:shadow-lg hover:shadow-purple-500/40 transition-all duration-300 active:scale-95 disabled:opacity-70 mt-6"
+          className="w-3/4 sm:w-1/2 self-center h-14 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-lg rounded-2xl hover:shadow-lg hover:shadow-purple-500/40 transition-all duration-300 active:scale-95 disabled:opacity-70 mt-6"
           disabled={loading}
         >
           {loading ? <div className="loader"></div> : "Log In"}
